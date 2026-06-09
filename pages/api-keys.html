@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Keys — YouCam API Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../src/css/tokens.css" />
+  <link rel="stylesheet" href="../src/css/components.css" />
+</head>
+<body>
+
+<!-- ══ TOPNAV ══════════════════════════════════════════════════ -->
+<header class="topnav">
+  <a href="get-started.html" class="topnav__logo">
+    <img src="../src/icon/API_header.svg" alt="YouCam API" style="height:24px;width:auto;" />
+  </a>
+  <ul class="topnav__links">
+    <li><a href="#">Products</a></li>
+    <li><a href="#">Pricing</a></li>
+    <li><a href="#">Documentation</a></li>
+    <li><a href="#">Playground</a></li>
+    <li><a href="#">Contact Us</a></li>
+  </ul>
+  <div class="topnav__spacer"></div>
+  <div class="topnav__avatar">
+    <img src="../src/icon/user.svg" alt="Account" style="width:40px;height:40px;display:block;" />
+  </div>
+</header>
+
+<!-- ══ APP BODY ════════════════════════════════════════════════ -->
+<div class="app-body">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar__collapse-btn" data-sidebar-toggle="sidebar" title="Toggle sidebar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline data-arrow points="15 6 9 12 15 18"/>
+      </svg>
+    </button>
+    <nav class="sidebar__nav">
+      <a class="sidebar__nav-item" href="get-started.html">
+        <img src="../src/icon/start.svg" class="nav-icon" alt="" />
+        <span class="nav-label">Get Started</span>
+        
+      </a>
+      <a class="sidebar__nav-item active" href="api-keys.html">
+        <img src="../src/icon/api-key.svg" class="nav-icon" alt="" />
+        <span class="nav-label">API Keys</span>
+        
+      </a>
+      <a class="sidebar__nav-item" href="webhook.html">
+        <img src="../src/icon/webhook.svg" class="nav-icon" alt="" />
+        <span class="nav-label">Webhook</span>
+        
+      </a>
+      <a class="sidebar__nav-item" href="usage.html">
+        <img src="../src/icon/usage.svg" class="nav-icon" alt="" />
+        <span class="nav-label">Usage</span>
+        
+      </a>
+      <a class="sidebar__nav-item" href="#">
+        <img src="../src/icon/notification.svg" class="nav-icon" alt="" />
+        <span class="nav-label">Notifications</span>
+        
+      </a>
+      <a class="sidebar__nav-item" href="#" target="_blank" rel="noopener">
+        <img src="../src/icon/whats new.svg" class="nav-icon" alt="" />
+        <span class="nav-label">What's New</span>
+        <img src="../src/icon/external link.svg" class="nav-external" alt="" />
+      </a>
+      <a class="sidebar__nav-item" href="#">
+        <img src="../src/icon/redeem code.svg" class="nav-icon" alt="" />
+        <span class="nav-label">Redeem Code</span>
+        
+      </a>
+      <a class="sidebar__nav-item" href="#">
+        <img src="../src/icon/billing.svg" class="nav-icon" alt="" />
+        <span class="nav-label">Payment Method</span>
+        
+      </a>
+      <a class="sidebar__nav-item" href="#">
+        <img src="../src/icon/billing.svg" class="nav-icon" alt="" />
+        <span class="nav-label">Billing History</span>
+        
+      </a>
+      <a class="sidebar__nav-item" href="#">
+        <img src="../src/icon/project management.svg" class="nav-icon" alt="" />
+        <span class="nav-label">Project Management</span>
+        
+      </a>
+    </nav>
+    <div class="sidebar__user">
+      <div class="sidebar__user-avatar">SW</div>
+      <div class="sidebar__user-info">
+        <div class="sidebar__user-name">Default</div>
+        <div class="sidebar__user-org">Steven Weng</div>
+      </div>
+      <svg class="sidebar__user-chevron" width="16" height="16" viewBox="0 0 24 24"
+        fill="none" stroke="currentColor" stroke-width="2"
+        style="margin-left:auto;flex-shrink:0;color:var(--color-text-secondary)">
+        <polyline points="18 15 12 9 6 15"/>
+      </svg>
+    </div>
+  </aside>
+
+  <!-- PAGE SHELL -->
+  <div class="page-shell">
+    <div id="page-content" class="page-content">
+      <div class="page-header">
+        <h1 class="page-header__title">API Keys</h1>
+        <p class="page-header__description">In order to safeguard the security of your account, we strongly advise against sharing or exposing your API key in browser or client-side code. Please be aware that YouCam Online Editor retains the authority to automatically rotate any API key that becomes publicly disclosed.</p>
+      </div>
+
+      <div class="table-wrapper" style="margin-bottom:24px">
+          <table class="table">
+            <thead><tr>
+              <th>API Key</th><th>Description</th><th>Rate Limit</th>
+              <th>Status</th><th>Created on</th><th>Expired on</th><th>Operations</th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td>...3W-h <button class="btn-icon" style="width:18px;height:18px;vertical-align:middle" title="Show"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></td>
+                <td style="color:var(--color-text-secondary)">—</td>
+                <td>250 requests / 300 seconds</td>
+                <td><span class="badge badge-success">Activated</span></td>
+                <td>2026/04/17</td><td>—</td>
+                <td><div class="ops-cell">
+                  <button class="btn btn-secondary">Edit</button>
+                  <button class="btn-icon" data-copy="...3W-h" title="Copy"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+                  <button class="btn-icon danger" data-confirm="Delete this API key?" data-confirm-label="Delete" title="Delete"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
+                </div></td>
+              </tr>
+              <tr>
+                <td>...5DoB <button class="btn-icon" style="width:18px;height:18px;vertical-align:middle" title="Show"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></td>
+                <td>Console test key</td>
+                <td>250 requests / 300 seconds</td>
+                <td><span class="badge badge-success">Activated</span></td>
+                <td>2026/01/29</td><td>—</td>
+                <td><div class="ops-cell">
+                  <button class="btn btn-secondary">Edit</button>
+                  <button class="btn-icon" data-copy="...5DoB" title="Copy"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+                  <button class="btn-icon danger" data-confirm="Delete this API key?" data-confirm-label="Delete" title="Delete"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
+                </div></td>
+              </tr>
+            </tbody>
+          </table>
+      </div>
+
+      <button class="btn btn-primary" data-modal-open="modalGenerateKey">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Generate new API Key
+      </button>
+
+<!-- Generate API Key Modal -->
+<div class="modal-overlay" id="modalGenerateKey">
+  <div class="modal">
+    <div class="modal__header">
+      <span class="modal__title">Generate API key</span>
+      <button class="modal__close" data-modal-close>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal__body">
+      <div class="form-group">
+        <label class="form-label">Expiration <span class="required">*</span></label>
+        <div style="display:flex;align-items:center;gap:16px">
+          <input class="input" type="date" value="2026-08-08" style="flex:1" id="expiryDate" />
+          <label class="checkbox-wrapper">
+            <input type="checkbox" class="checkbox" id="chkPermanent" />
+            <span class="checkbox-label">Permanent</span>
+          </label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea class="textarea" placeholder="Description (no more than 50 words)" rows="3"></textarea>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-primary" id="btnGenerate">Generate</button>
+    </div>
+  </div>
+</div>
+    </div><!-- /page-content -->
+  </div><!-- /page-shell -->
+
+</div><!-- /app-body -->
+
+<!-- ══ FOOTER ══════════════════════════════════════════════════ -->
+<footer class="site-footer">
+  <div class="site-footer__inner">
+    <div class="site-footer__brand">
+      <a href="get-started.html" class="site-footer__logo">
+        <img src="../src/icon/API_footer.svg" alt="YouCam API" style="height:20px;width:auto;" />
+      </a>
+      <p class="site-footer__copy">2026 © Perfect Corp. All Rights Reserved.</p>
+      <div class="site-footer__lang">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
+        <span>English</span>
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </div>
+    </div>
+    <div class="site-footer__links">
+      <div class="site-footer__col">
+        <h4 class="site-footer__col-title">API</h4>
+        <ul>
+          <li><a href="https://yce.perfectcorp.com/ai-api" target="_blank">About API</a></li>
+          <li><a href="https://yce.perfectcorp.com/ai-api/api-pricing" target="_blank">API Plan</a></li>
+          <li><a href="https://docs.perfectcorp.com/develop/introduction" target="_blank">Document</a></li>
+          <li><a href="get-started.html">API Dashboard</a></li>
+        </ul>
+      </div>
+      <div class="site-footer__col">
+        <h4 class="site-footer__col-title">Support</h4>
+        <ul>
+          <li><a href="https://yce.perfectcorp.com/ai-api/api-pricing" target="_blank">API Pricing</a></li>
+          <li><a href="https://www.perfectcorp.com/consumer/blog" target="_blank">Blogs</a></li>
+          <li><a href="https://yce.perfectcorp.com/faq" target="_blank">FAQ</a></li>
+        </ul>
+      </div>
+      <div class="site-footer__col">
+        <h4 class="site-footer__col-title">Legal</h4>
+        <ul>
+          <li><a href="#" target="_blank">Privacy Policy</a></li>
+          <li><a href="#" target="_blank">Terms of Use</a></li>
+          <li><a href="#" target="_blank">Legal Notice</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  document.getElementById('chkPermanent').addEventListener('change', function(){
+    document.getElementById('expiryDate').disabled = this.checked;
+  });
+  document.getElementById('btnGenerate').addEventListener('click', function(){
+    Toast.show('API Key generated!', 'success');
+    Modal.close('modalGenerateKey');
+  });
+</script>
+<script src="../src/js/components.js"></script>
+<script src="../src/js/router.js"></script>
+</body>
+</html>

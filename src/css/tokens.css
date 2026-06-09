@@ -1,0 +1,131 @@
+/* ============================================================
+   YouCam API Console — Design Tokens
+   Source: https://yce.perfectcorp.com/api-console/en/
+   ============================================================ */
+
+:root {
+  /* --- Brand Colors --- */
+  --color-brand:              #3385ff;
+  --color-brand-active:       #2e78e9;
+  --color-brand-bg-weak:      rgba(51, 133, 255, 0.05);
+  --color-brand-bg-solid:     #f5f9ff;
+
+  /* --- Text Colors --- */
+  --color-text-default:       rgba(9, 22, 26, 0.95);
+  --color-text-secondary:     rgba(17, 24, 26, 0.65);
+  --color-text-weaker:        rgba(17, 24, 26, 0.45);
+  --color-text-placeholder:   #999999;
+  --color-text-brand:         #3385ff;
+  --color-text-on-brand:      #ffffff;
+  --color-text-inverted:      #ffffff;
+
+  /* --- Background / Surface --- */
+  --color-bg-page:            #ffffff;
+  --color-bg-sidebar:         #ffffff;
+  --color-bg-card:            #ffffff;
+  --color-bg-overlay:         #00000080;
+  --color-bg-fill-weak:       #3385ff0d;
+  --color-bg-fill-grey:       #11181a0a;
+  --color-bg-topnav:          #000000;
+
+  /* --- Border / Stroke --- */
+  --color-border-default:     rgba(17, 24, 26, 0.10);
+  --color-border-strong:      rgba(17, 24, 26, 0.20);
+  --color-border-sidebar:     #e5e7eb;
+  --color-border-brand:       #3385ff;
+
+  /* --- Semantic: Success --- */
+  --color-success:            #0acc92;
+  --color-success-text:       #0acc92;
+  --color-success-bg:         rgba(10, 204, 146, 0.05);
+  --color-success-border:     rgba(10, 204, 146, 0.30);
+
+  /* --- Semantic: Error --- */
+  --color-error:              #de0000;
+  --color-error-text:         #de0000;
+  --color-error-bg:           rgba(222, 0, 0, 0.14);
+  --color-error-border:       rgba(222, 0, 0, 0.30);
+
+  /* --- Semantic: Warning --- */
+  --color-warning:            #fec62e;
+
+  /* --- Neutrals --- */
+  --color-neutral-50:         rgba(17, 24, 26, 0.04);
+  --color-neutral-100:        rgba(17, 24, 26, 0.10);
+  --color-neutral-200:        rgba(17, 24, 26, 0.20);
+  --color-neutral-500:        #999999;
+  --color-neutral-900:        #12181a;
+  --color-white:              #ffffff;
+  --color-black:              #000000;
+
+  /* ---------------------------------------------------------- */
+  /* Typography                                                  */
+  /* ---------------------------------------------------------- */
+  --font-sans:      'Roboto', ui-sans-serif, system-ui, sans-serif;
+  --font-mono:      ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --font-weight-regular: 400;
+  --font-weight-medium:  500;
+  --font-weight-bold:    700;
+
+  --text-h1:        40px;
+  --text-h2:        32px;
+  --text-h3:        24px;
+  --text-h4:        20px;
+  --text-body-lg:   18px;
+  --text-body:      16px;
+  --text-body-sm:   14px;
+  --text-caption:   12px;
+
+  --leading-h1:     48px;
+  --leading-h2:     40px;
+  --leading-h3:     32px;
+  --leading-h4:     28px;
+  --leading-body-lg: 28px;
+  --leading-body:   24px;
+  --leading-body-sm: 20px;
+  --leading-caption: 16px;
+
+  /* ---------------------------------------------------------- */
+  /* Spacing (4px base)                                          */
+  /* ---------------------------------------------------------- */
+  --space-1:   4px;
+  --space-2:   8px;
+  --space-3:   12px;
+  --space-4:   16px;
+  --space-5:   20px;
+  --space-6:   24px;
+  --space-7:   28px;
+  --space-8:   32px;
+  --space-10:  40px;
+  --space-12:  48px;
+
+  /* ---------------------------------------------------------- */
+  /* Border Radius                                               */
+  /* ---------------------------------------------------------- */
+  --radius-xs:   2px;
+  --radius-sm:   8px;
+  --radius-md:   16px;
+  --radius-lg:   20px;
+  --radius-pill: 9999px;
+
+  /* ---------------------------------------------------------- */
+  /* Shadows                                                     */
+  /* ---------------------------------------------------------- */
+  --shadow-sm:  0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md:  0 4px 16px rgba(0, 0, 0, 0.12);
+  --shadow-lg:  0 8px 32px rgba(0, 0, 0, 0.16);
+
+  /* ---------------------------------------------------------- */
+  /* Layout                                                      */
+  /* ---------------------------------------------------------- */
+  --topnav-height:   61px;
+  --sidebar-width:   210px;
+  --content-padding: var(--space-8) var(--space-10);
+
+  /* ---------------------------------------------------------- */
+  /* Motion                                                      */
+  /* ---------------------------------------------------------- */
+  --transition-fast:   0.15s ease;
+  --transition-normal: 0.25s ease;
+}
