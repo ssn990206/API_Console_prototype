@@ -29,7 +29,7 @@
   --color-bg-topnav:          #000000;
 
   /* --- Border / Stroke --- */
-  --color-border-default:     rgba(17, 24, 26, 0.10);
+  --color-border-default:     rgba(17, 24, 26, 0.05);
   --color-border-strong:      rgba(17, 24, 26, 0.20);
   --color-border-sidebar:     #e5e7eb;
   --color-border-brand:       #3385ff;
