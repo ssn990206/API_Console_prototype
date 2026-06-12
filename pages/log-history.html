@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Log History — YouCam API Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../src/css/tokens.css" />
+  <link rel="stylesheet" href="../src/css/components.css" />
+  <style>
+    /* ── Page-specific only ── */
+
+    /* 4xx warning badge — not in component library */
+    .badge-warning {
+      color: #7a5f00;
+      background: rgba(254, 198, 46, 0.15);
+      border: 1px solid rgba(254, 198, 46, 0.40);
+    }
+
+    /* Webhook delivery status badges */
+    .badge-delivered { color: var(--color-success-text); background: var(--color-success-bg); border: 1px solid var(--color-success-border); }
+    .badge-failed    { color: var(--color-error-text);   background: var(--color-error-bg);   border: 1px solid var(--color-error-border); }
+    .badge-retrying  { color: #7a5f00; background: rgba(254,198,46,0.15); border: 1px solid rgba(254,198,46,0.40); }
+
+    /* New-row flash on generate */
+    @keyframes rowFlash {
+      0%   { background: rgba(51,133,255,0.12); }
+      100% { background: transparent; }
+    }
+    .new-row { animation: rowFlash 1.8s ease-out forwards; }
+
+    /* Monospace text (Request ID, endpoint) */
+    .mono { font-family: var(--font-mono); font-size: 12px; }
+
+    /* Floating generate button */
+    .gen-fab {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      z-index: 201;
+      height: 42px;
+      padding: 0 18px;
+      border-radius: var(--radius-pill);
+      background: #404f9c;
+      color: #fff;
+      border: none;
+      font-family: var(--font-sans);
+      font-size: var(--text-body-sm);
+      font-weight: var(--font-weight-medium);
+      cursor: pointer;
+      box-shadow: 0 4px 16px hsla(257, 62%, 76%, 0.35);
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      transition: background var(--transition-fast), box-shadow var(--transition-fast);
+    }
+    .gen-fab:hover { background: #6574bd; box-shadow: 0 6px 20px rgba(140, 170, 216, 0.45); }
+
+    /* Generate panel (uses .card for base styling) */
+    .gen-panel {
+      position: fixed;
+      bottom: 80px;
+      right: 28px;
+      width: 250px;
+      z-index: 200;
+      display: none;
+    }
+    .gen-panel.open { display: block; }
+    .gen-panel .gen-panel__title {
+      font-size: var(--text-body-sm);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text-default);
+      margin-bottom: var(--space-3);
+    }
+    .gen-type-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--color-border-default);
+      background: var(--color-white);
+      cursor: pointer;
+      font-family: var(--font-sans);
+      font-size: var(--text-body-sm);
+      color: var(--color-text-default);
+      text-align: left;
+      margin-bottom: 4px;
+      transition: background var(--transition-fast);
+    }
+    .gen-type-btn:last-child { margin-bottom: 0; }
+    .gen-type-btn:hover { background: var(--color-bg-fill-grey); }
+    .gen-type-btn .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* Prototype Setting panel — section labels & switches */
+    .gen-panel__section {
+      font-size: var(--text-caption);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-secondary);
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      margin: 12px 0 6px;
+    }
+    .gen-panel__section:first-of-type { margin-top: 0; }
+    .proto-toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 2px;
+      font-size: var(--text-body-sm);
+      color: var(--color-text-default);
+    }
+    .proto-switch {
+      position: relative;
+      width: 34px; height: 18px;
+      border-radius: 9px;
+      background: #d2d6dc;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background var(--transition-fast);
+    }
+    .proto-switch::after {
+      content: '';
+      position: absolute;
+      top: 2px; left: 2px;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 2px rgba(0,0,0,.25);
+      transition: left var(--transition-fast);
+    }
+    .proto-switch.on { background: var(--color-brand); }
+    .proto-switch.on::after { left: 18px; }
+
+    /* No-data (first-use) empty state */
+    .no-data-state {
+      text-align: center;
+      padding: 64px 24px 72px;
+    }
+    .no-data-state__title {
+      font-size: var(--text-body);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text-default);
+      margin: 16px 0 6px;
+    }
+    .no-data-state__desc {
+      font-size: var(--text-body-sm);
+      color: var(--color-text-secondary);
+      margin-bottom: 24px;
+    }
+    .no-data-state__cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      height: 44px;
+      padding: 0 28px;
+      border-radius: var(--radius-pill);
+      font-weight: var(--font-weight-bold);
+      text-decoration: none;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-8px);
+      background: #F3FCFA;
+      color: #333;
+      padding: 10px 16px;
+      border-radius: var(--radius-sm);
+      border-left: 3px solid #067A57;
+      font-size: var(--text-body-sm);
+      z-index: 300;
+      opacity: 0;
+      transition: opacity 0.2s, transform 0.2s;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* Pagination row inside table wrapper */
+    .table-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-3) var(--space-4);
+      border-top: 1px solid var(--color-border-default);
+    }
+    .table-footer .page-size-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-size: var(--text-body-sm);
+      color: var(--color-text-secondary);
+    }
+    .table-footer .page-size-row .select-wrapper .select {
+      height: 30px;
+      min-width: 64px;
+      font-size: var(--text-caption);
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 56px 24px;
+      color: var(--color-text-secondary);
+    }
+    .empty-state svg { margin-bottom: 12px; opacity: 0.3; }
+    .empty-state p { font-size: var(--text-body-sm); }
+  </style>
+</head>
+<body>
+
+<!-- ══ TOPNAV ══════════════════════════════════════════════════ -->
+<header class="topnav">
+  <a href="../index.html" class="topnav__logo">
+    <img src="../src/icon/API_header.svg" alt="YouCam API" style="height:24px;width:auto;" />
+  </a>
+  <ul class="topnav__links">
+    <li><a href="#">Products</a></li>
+    <li><a href="#">Pricing</a></li>
+    <li><a href="#">Documentation</a></li>
+    <li><a href="#">Playground</a></li>
+    <li><a href="#">Contact Us</a></li>
+  </ul>
+  <div class="topnav__spacer"></div>
+  <div class="topnav__avatar">
+    <img src="../src/icon/user.svg" alt="Account" style="width:40px;height:40px;display:block;" />
+  </div>
+</header>
+
+<!-- ══ APP BODY ════════════════════════════════════════════════ -->
+<div class="app-body">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar__collapse-btn" data-sidebar-toggle="sidebar" title="Toggle sidebar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline data-arrow points="15 6 9 12 15 18"/>
+      </svg>
+    </button>
+    <nav class="sidebar__nav">
+      <a class="sidebar__nav-item" href="../index.html">
+        <img src="../src/icon/start.svg" class="nav-icon" alt="" />
+        <span class="nav-label">Get Started</span>
+      </a>
+      <a class="sidebar__nav-item" href="api-keys.html">
+        <img src="../src/icon/api-key.svg" class="nav-icon" alt="" />
+        <span class="nav-label">API Keys</span>
+      </a>
+      <a class="sidebar__nav-item" href="webhook.html">
+        <img src="../src/icon/webhook.svg" class="nav-icon" alt="" />
+        <span class="nav-label">Webhook</span>
+      </a>
+      <a class="sidebar__nav-item" href="usage.html">
+        <img src="../src/icon/usage.svg" class="nav-icon" alt="" />
+        <span class="nav-label">Usage</span>
+      </a>
+      <a class="sidebar__nav-item active" href="log-history.html">
+        <img src="../src/icon/log history.svg" class="nav-icon" alt="" />
+        <span class="nav-label">Log History</span>
+      </a>
+      <a class="sidebar__nav-item" href="#">
+        <img src="../src/icon/notification.svg" class="nav-icon" alt="" />
+        <span class="nav-label">Notifications</span>
+      </a>
+      <a class="sidebar__nav-item" href="#" target="_blank" rel="noopener">
+        <img src="../src/icon/whats new.svg" class="nav-icon" alt="" />
+        <span class="nav-label">What's New</span>
+        <img src="../src/icon/external link.svg" class="nav-external" alt="" />
+      </a>
+      <a class="sidebar__nav-item" href="#">
+        <img src="../src/icon/redeem code.svg" class="nav-icon" alt="" />
+        <span class="nav-label">Redeem Code</span>
+      </a>
+      <a class="sidebar__nav-item" href="#">
+        <img src="../src/icon/payment.svg" class="nav-icon" alt="" />
+        <span class="nav-label">Payment Method</span>
+      </a>
+      <a class="sidebar__nav-item" href="#">
+        <img src="../src/icon/billing history.svg" class="nav-icon" alt="" />
+        <span class="nav-label">Billing History</span>
+      </a>
+      <a class="sidebar__nav-item" href="#">
+        <img src="../src/icon/project management.svg" class="nav-icon" alt="" />
+        <span class="nav-label">Project Management</span>
+      </a>
+    </nav>
+    <div class="sidebar__user">
+      <div class="sidebar__user-avatar">SW</div>
+      <div class="sidebar__user-info">
+        <div class="sidebar__user-name">Default</div>
+        <div class="sidebar__user-org">Steven Weng</div>
+      </div>
+      <svg class="sidebar__user-chevron" width="16" height="16" viewBox="0 0 24 24"
+           fill="none" stroke="currentColor" stroke-width="2"
+           style="margin-left:auto;flex-shrink:0;color:var(--color-text-secondary)">
+        <polyline points="18 15 12 9 6 15"/>
+      </svg>
+    </div>
+  </aside>
+
+  <!-- PAGE SHELL -->
+  <div class="page-shell">
+    <div class="page-content">
+
+      <!-- Page Header -->
+      <div class="page-header">
+        <div class="page-header__row">
+          <div>
+            <h1 class="page-header__title">Log History</h1>
+            <p class="page-header__description">View and filter API call logs. Data retained for 30 days.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabs: API Keys / Webhook -->
+      <div class="tabs">
+        <button class="tab active" data-tab="api">API Requests</button>
+        <button class="tab" data-tab="webhook">Webhook</button>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="filter-bar" id="filterBar">
+
+        <div class="filter-bar__group">
+          <span class="filter-bar__label">Time Range</span>
+          <div class="custom-select" data-select id="filterTime">
+            <button class="custom-select__trigger" type="button">
+              <span class="custom-select__value">Last 24 hours</span>
+              <svg class="custom-select__chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="custom-select__dropdown">
+              <div class="custom-select__option" data-value="1h">Last 1 hour</div>
+              <div class="custom-select__option selected" data-value="24h">Last 24 hours</div>
+              <div class="custom-select__option" data-value="7d">Last 7 days</div>
+              <div class="custom-select__option" data-value="30d">Last 30 days</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- API Key filter — API Keys tab only -->
+        <div class="filter-bar__group" id="keyFilterGroup">
+          <span class="filter-bar__label" id="keyFilterLabel">API Key</span>
+          <div class="custom-select custom-select--multi" data-select data-multi id="filterKey" style="min-width:200px;">
+            <div class="custom-select__trigger" role="button" tabindex="0">
+              <div class="custom-select__tags" data-tags></div>
+              <span class="custom-select__placeholder" id="keyFilterPlaceholder">All keys</span>
+              <svg class="custom-select__chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <div class="custom-select__dropdown">
+              <div class="custom-select__option custom-select__option--all" data-select-all>
+                <span class="custom-select__checkbox"></span>Select All
+              </div>
+              <div class="custom-select__option" data-value="prod-key-a1b2c3">
+                <span class="custom-select__checkbox"></span>...b2c3
+              </div>
+              <div class="custom-select__option" data-value="staging-key-d4e5f6">
+                <span class="custom-select__checkbox"></span>...e5f6
+              </div>
+              <div class="custom-select__option" data-value="dev-key-g7h8i9">
+                <span class="custom-select__checkbox"></span>...h8i9
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Endpoint (API) / Callback URL (Webhook) -->
+        <div class="filter-bar__group">
+          <span class="filter-bar__label" id="endpointFilterLabel">Endpoint</span>
+          <div class="custom-select custom-select--multi" data-select data-multi id="filterEndpoint" style="min-width:200px;">
+            <div class="custom-select__trigger" role="button" tabindex="0">
+              <div class="custom-select__tags" data-tags></div>
+              <span class="custom-select__placeholder" id="endpointFilterPlaceholder">All endpoints</span>
+              <svg class="custom-select__chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <div class="custom-select__dropdown">
+              <div class="custom-select__option custom-select__option--all" data-select-all>
+                <span class="custom-select__checkbox"></span>Select All
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Status Code -->
+        <div class="filter-bar__group">
+          <span class="filter-bar__label">Status Code</span>
+          <div class="custom-select custom-select--multi" data-select data-multi id="filterStatus" style="min-width:140px;">
+            <div class="custom-select__trigger" role="button" tabindex="0">
+              <div class="custom-select__tags" data-tags></div>
+              <span class="custom-select__placeholder">All</span>
+              <svg class="custom-select__chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <div class="custom-select__dropdown">
+              <div class="custom-select__option custom-select__option--all" data-select-all>
+                <span class="custom-select__checkbox"></span>Select All
+              </div>
+              <div class="custom-select__option" data-value="2xx">
+                <span class="custom-select__checkbox"></span>2xx
+              </div>
+              <div class="custom-select__option" data-value="4xx">
+                <span class="custom-select__checkbox"></span>4xx
+              </div>
+              <div class="custom-select__option" data-value="5xx">
+                <span class="custom-select__checkbox"></span>5xx
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Method — API Keys tab only -->
+        <div class="filter-bar__group" id="methodFilterGroup">
+          <span class="filter-bar__label">Method</span>
+          <div class="custom-select custom-select--multi" data-select data-multi id="filterMethod" style="min-width:140px;">
+            <div class="custom-select__trigger" role="button" tabindex="0">
+              <div class="custom-select__tags" data-tags></div>
+              <span class="custom-select__placeholder">All</span>
+              <svg class="custom-select__chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <div class="custom-select__dropdown">
+              <div class="custom-select__option custom-select__option--all" data-select-all>
+                <span class="custom-select__checkbox"></span>Select All
+              </div>
+              <div class="custom-select__option" data-value="GET">
+                <span class="custom-select__checkbox"></span>GET
+              </div>
+              <div class="custom-select__option" data-value="POST">
+                <span class="custom-select__checkbox"></span>POST
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Event Type — Webhook tab only -->
+        <div class="filter-bar__group" id="eventTypeFilterGroup" style="display:none;">
+          <span class="filter-bar__label">Event Type</span>
+          <div class="custom-select custom-select--multi" data-select data-multi id="filterEventType" style="min-width:180px;">
+            <div class="custom-select__trigger" role="button" tabindex="0">
+              <div class="custom-select__tags" data-tags></div>
+              <span class="custom-select__placeholder">All</span>
+              <svg class="custom-select__chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <div class="custom-select__dropdown">
+              <div class="custom-select__option custom-select__option--all" data-select-all>
+                <span class="custom-select__checkbox"></span>Select All
+              </div>
+              <div class="custom-select__option" data-value="success_pipeline">
+                <span class="custom-select__checkbox"></span>success_pipeline
+              </div>
+              <div class="custom-select__option" data-value="fail_pipeline">
+                <span class="custom-select__checkbox"></span>fail_pipeline
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-left:auto;align-self:flex-end;">
+          <button class="btn btn-secondary" id="btnRefresh" style="height:38px;padding:0 14px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+            Refresh
+          </button>
+          <button class="btn btn-outline" id="btnExport" style="height:38px;padding:0 14px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Export CSV
+          </button>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-wrapper card" style="padding:0; overflow:hidden;">
+        <table class="table" id="logTable">
+          <thead id="tableHead"></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+        <div class="empty-state" id="emptyState" style="display:none;">
+          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+          <p>No logs found for the selected filters.</p>
+        </div>
+        <!-- No-data (first-use) state — toggled from Prototype Setting -->
+        <div class="no-data-state" id="noDataState" style="display:none;">
+          <img src="../src/icon/no-data.svg" alt="" style="width:150px;height:auto;" />
+          <p class="no-data-state__title" id="noDataTitle">No API logs found</p>
+          <p class="no-data-state__desc" id="noDataDesc">Once you start making API calls, request logs will appear here.</p>
+          <a class="btn btn-primary no-data-state__cta" id="noDataCta" href="api-keys.html">
+            <span id="noDataCtaText">Get started with your first API key</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          </a>
+        </div>
+        <div class="table-footer" id="tableFooter">
+          <div class="page-size-row">
+            <span>Rows per page:</span>
+            <div class="custom-select custom-select--up" data-select id="pageSize" style="min-width:64px;">
+              <button class="custom-select__trigger" type="button" style="height:30px;min-height:30px;font-size:var(--text-caption);padding:0 24px 0 8px;">
+                <span class="custom-select__value">20</span>
+                <svg class="custom-select__chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="custom-select__dropdown" style="min-width:64px;">
+                <div class="custom-select__option selected" data-value="20">20</div>
+                <div class="custom-select__option" data-value="50">50</div>
+                <div class="custom-select__option" data-value="100">100</div>
+              </div>
+            </div>
+          </div>
+          <div class="pagination" id="paginationArea">
+            <span class="pagination__info" id="pageInfo"></span>
+            <div style="display:flex;gap:4px;" id="pgBtns"></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /page-content -->
+  </div><!-- /page-shell -->
+</div><!-- /app-body -->
+
+<!-- ══ PROTOTYPE SETTING FAB ═══════════════════════════════════ -->
+<button class="gen-fab" id="genFab">
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <circle cx="12" cy="12" r="3"/>
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+  </svg>
+  Prototype Setting
+</button>
+
+<!-- Prototype Setting panel (uses .card) -->
+<div class="gen-panel" id="genPanel">
+  <div class="card">
+    <p class="gen-panel__title">Prototype Setting</p>
+
+    <p class="gen-panel__section">Empty State</p>
+    <div class="proto-toggle-row">
+      <span>API Keys — no data</span>
+      <button class="proto-switch" data-empty-tab="api" title="Toggle API Keys empty state"></button>
+    </div>
+    <div class="proto-toggle-row">
+      <span>Webhook — no data</span>
+      <button class="proto-switch" data-empty-tab="webhook" title="Toggle Webhook empty state"></button>
+    </div>
+
+    <hr class="divider" style="margin:10px 0;">
+
+    <p class="gen-panel__section">Generate Mock Log</p>
+    <button class="gen-type-btn" data-type="success">
+      <span class="dot" style="background:#0acc92;"></span> Success (2xx)
+    </button>
+    <button class="gen-type-btn" data-type="client-error">
+      <span class="dot" style="background:#fec62e;"></span> Client Error (4xx)
+    </button>
+    <button class="gen-type-btn" data-type="server-error">
+      <span class="dot" style="background:#de0000;"></span> Server Error (5xx)
+    </button>
+    <hr class="divider" style="margin:8px 0;">
+    <button class="gen-type-btn" data-type="webhook-delivered">
+      <span class="dot" style="background:#0acc92;"></span> Webhook — Delivered
+    </button>
+    <button class="gen-type-btn" data-type="webhook-failed">
+      <span class="dot" style="background:#de0000;"></span> Webhook — Failed
+    </button>
+    <button class="gen-type-btn" data-type="webhook-retrying">
+      <span class="dot" style="background:#fec62e;"></span> Webhook — Retrying
+    </button>
+    <hr class="divider" style="margin:8px 0;">
+    <button class="gen-type-btn" data-type="random" style="color:var(--color-text-secondary);">
+      <span class="dot" style="background:#aaa;"></span> Random
+    </button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- ══ SCRIPTS ═════════════════════════════════════════════════ -->
+<script>
+(function () {
+  /* ── Constants ─────────────────────────────── */
+  const API_KEYS   = ['prod-key-a1b2c3', 'staging-key-d4e5f6', 'dev-key-g7h8i9'];
+  const WEBHOOKS   = ['wh-order-events', 'wh-user-activity', 'wh-payment-notify'];
+  const METHODS    = ['GET', 'POST'];
+  const API_EPS    = ['/v1/makeup/virtual-tryon', '/v1/hair/color', '/v1/skin/analysis',
+                      '/v1/face/reshape', '/v1/avatar/generate', '/v1/headshot/generate',
+                      '/v1/usage/summary', '/v1/keys/list'];
+  const WH_EPS     = ['https://hooks.yourapp.com/webhooks/order/created',
+                      'https://hooks.yourapp.com/webhooks/user/signup',
+                      'https://hooks.yourapp.com/webhooks/payment/completed',
+                      'https://hooks.yourapp.com/webhooks/session/expired'];
+  const EVENT_TYPES = ['success_pipeline', 'fail_pipeline'];
+  const truncKey = k => '...' + k.slice(-4);
+
+  /* ── State ─────────────────────────────────── */
+  let allLogs    = [];
+  let activeTab  = 'api';
+  let currentPage = 1;
+  let pageSize   = 20;
+  let idCounter  = 1000;
+
+  /* ── Prototype Setting: per-tab no-data (empty) state ── */
+  const emptyMode = { api: false, webhook: false };
+  const NO_DATA_COPY = {
+    api: {
+      title: 'No API logs found',
+      desc:  'Once you start making API calls, request logs will appear here.',
+      cta:   'Get started with your first API key',
+      href:  'api-keys.html',
+    },
+    webhook: {
+      title: 'No webhook logs found',
+      desc:  'Once your webhook starts receiving events, delivery logs will appear here.',
+      cta:   'Set up your first webhook',
+      href:  'webhook.html',
+    },
+  };
+
+  /* ── Helpers ────────────────────────────────── */
+  const rand  = arr => arr[Math.floor(Math.random() * arr.length)];
+  const rInt  = (lo, hi) => Math.floor(Math.random() * (hi - lo + 1)) + lo;
+  const newId = () => 'req-' + (++idCounter).toString(16).padStart(6,'0') + '-' + Math.random().toString(16).slice(2,6);
+  const fmtTs = d => {
+    const p = n => String(n).padStart(2,'0');
+    return `${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+  };
+
+  /* ── Custom-select helpers ──────────────────── */
+  function csGet(id) {
+    const wrapper = document.getElementById(id);
+    if (!wrapper) return '';
+    const opt = wrapper.querySelector('.custom-select__option.selected');
+    return opt ? (opt.dataset.value ?? '') : '';
+  }
+
+  function csSet(id, value) {
+    const wrapper = document.getElementById(id);
+    if (!wrapper) return;
+    let matched = null;
+    wrapper.querySelectorAll('.custom-select__option').forEach(o => {
+      const isMatch = o.dataset.value === value;
+      o.classList.toggle('selected', isMatch);
+      if (isMatch) matched = o;
+    });
+    if (!matched) {
+      const first = wrapper.querySelector('.custom-select__option');
+      if (first) { first.classList.add('selected'); matched = first; }
+    }
+    const valueEl = wrapper.querySelector('.custom-select__value');
+    if (valueEl && matched) valueEl.textContent = matched.textContent;
+  }
+
+  function csRebuild(id, options) {
+    const wrapper  = document.getElementById(id);
+    if (!wrapper) return;
+    const dropdown = wrapper.querySelector('.custom-select__dropdown');
+    const valueEl  = wrapper.querySelector('.custom-select__value');
+    dropdown.innerHTML = '';
+    let selectedLabel = '';
+    options.forEach(o => {
+      const div = document.createElement('div');
+      div.className = 'custom-select__option' + (o.selected ? ' selected' : '');
+      div.dataset.value = o.value;
+      div.textContent = o.label;
+      if (o.selected) selectedLabel = o.label;
+      dropdown.appendChild(div);
+    });
+    if (valueEl) valueEl.textContent = selectedLabel;
+  }
+
+  /* ── Multi-select helpers (empty selection = no filter) ── */
+  function csGetMulti(id) {
+    const wrapper = document.getElementById(id);
+    if (!wrapper) return [];
+    return Array.from(
+      wrapper.querySelectorAll('.custom-select__option:not([data-select-all]).selected')
+    ).map(o => o.dataset.value);
+  }
+
+  function csClearMulti(id) {
+    const wrapper = document.getElementById(id);
+    if (!wrapper) return;
+    wrapper.querySelectorAll('.custom-select__option').forEach(o => o.classList.remove('selected'));
+    if (window.CustomSelect) CustomSelect.updateTags(wrapper);
+  }
+
+  function csRebuildMulti(id, options) {
+    const wrapper  = document.getElementById(id);
+    if (!wrapper) return;
+    const dropdown = wrapper.querySelector('.custom-select__dropdown');
+    dropdown.innerHTML = '';
+    const all = document.createElement('div');
+    all.className = 'custom-select__option custom-select__option--all';
+    all.setAttribute('data-select-all', '');
+    all.innerHTML = '<span class="custom-select__checkbox"></span>Select All';
+    dropdown.appendChild(all);
+    options.forEach(o => {
+      const div = document.createElement('div');
+      div.className = 'custom-select__option' + (o.selected ? ' selected' : '');
+      div.dataset.value = o.value;
+      const cb = document.createElement('span');
+      cb.className = 'custom-select__checkbox';
+      div.appendChild(cb);
+      div.appendChild(document.createTextNode(o.label));
+      dropdown.appendChild(div);
+    });
+    if (options.length && options.every(o => o.selected)) all.classList.add('selected');
+    if (window.CustomSelect) CustomSelect.updateTags(wrapper);
+  }
+
+  /* ── Log factories ──────────────────────────── */
+  function apiLog(type, ts) {
+    const codes = { success: [200,200,200,201,204], 'client-error': [400,401,403,404,422,429], 'server-error': [500,502,503,504] };
+    return { kind:'api', requestId:newId(), timestamp: ts||new Date(),
+      statusCode: rand(codes[type]||codes.success), method: rand(METHODS),
+      endpoint: rand(API_EPS), latency: rInt(8,2400), apiKey: rand(API_KEYS) };
+  }
+  function webhookLog(type, ts) {
+    const delivMap = { 'webhook-delivered':'delivered', 'webhook-failed':'failed', 'webhook-retrying':'retrying' };
+    const delivery = delivMap[type] || rand(['delivered','failed','retrying']);
+    const code = delivery==='delivered' ? 200 : (delivery==='failed' ? rand([500,503]) : rand([429,503]));
+    return { kind:'webhook', requestId:newId(), timestamp: ts||new Date(),
+      statusCode: code, method:'POST', endpoint: rand(WH_EPS), latency: rInt(20,800),
+      webhookName: rand(WEBHOOKS), eventType: rand(EVENT_TYPES), deliveryStatus: delivery };
+  }
+
+  /* ── Seed data ──────────────────────────────── */
+  function seed() {
+    const now = Date.now();
+    const apiTypes = ['success','success','success','client-error','server-error'];
+    const whTypes  = ['webhook-delivered','webhook-delivered','webhook-failed','webhook-retrying'];
+    for (let i=0; i<48; i++) allLogs.push(apiLog(rand(apiTypes), new Date(now - rInt(0, 23*3600000))));
+    for (let i=0; i<22; i++) allLogs.push(webhookLog(rand(whTypes), new Date(now - rInt(0, 23*3600000))));
+    allLogs.sort((a,b) => b.timestamp - a.timestamp);
+  }
+
+  /* ── Filters ────────────────────────────────── */
+  function getFilters() {
+    return {
+      time:       csGet('filterTime'),
+      keys:       csGetMulti('filterKey'),
+      statuses:   csGetMulti('filterStatus'),
+      methods:    csGetMulti('filterMethod'),
+      eventTypes: csGetMulti('filterEventType'),
+      endpoints:  csGetMulti('filterEndpoint'),
+    };
+  }
+
+  function filtered() {
+    const f = getFilters(), now = Date.now();
+    const cutoffs = { '1h': 3600000, '24h': 86400000, '7d': 7*86400000, '30d': 30*86400000 };
+    return allLogs.filter(l => {
+      if (l.kind !== activeTab) return false;
+      if (cutoffs[f.time] && l.timestamp.getTime() < now - cutoffs[f.time]) return false;
+      if (f.keys.length) { const v = l.kind==='api'?l.apiKey:l.webhookName; if (!f.keys.includes(v)) return false; }
+      if (f.statuses.length) {
+        const cls = l.statusCode>=500 ? '5xx' : (l.statusCode>=400 ? '4xx' : (l.statusCode>=200&&l.statusCode<300 ? '2xx' : ''));
+        if (!f.statuses.includes(cls)) return false;
+      }
+      if (f.methods.length    && !f.methods.includes(l.method))        return false;
+      if (f.eventTypes.length && !f.eventTypes.includes(l.eventType))  return false;
+      if (f.endpoints.length  && !f.endpoints.includes(l.endpoint))    return false;
+      return true;
+    });
+  }
+
+  /* ── Endpoint dropdown ──────────────────────── */
+  function refreshEndpoints() {
+    const cur = csGetMulti('filterEndpoint');
+    const eps = [...new Set(allLogs.filter(l=>l.kind===activeTab).map(l=>l.endpoint))].sort();
+    csRebuildMulti('filterEndpoint', eps.map(ep => ({ value:ep, label:ep, selected: cur.includes(ep) })));
+  }
+
+  /* ── Status badge class ─────────────────────── */
+  function statusBadge(code) {
+    if (code>=500) return 'badge badge-error';
+    if (code>=400) return 'badge badge-warning';
+    return 'badge badge-success';
+  }
+
+  /* ── Render ─────────────────────────────────── */
+  function render(highlightId) {
+    const noData    = document.getElementById('noDataState');
+    const filterBar = document.getElementById('filterBar');
+    const logTable  = document.getElementById('logTable');
+
+    if (emptyMode[activeTab]) {
+      const c = NO_DATA_COPY[activeTab];
+      document.getElementById('noDataTitle').textContent   = c.title;
+      document.getElementById('noDataDesc').textContent    = c.desc;
+      document.getElementById('noDataCtaText').textContent = c.cta;
+      document.getElementById('noDataCta').href            = c.href;
+      noData.style.display    = 'block';
+      logTable.style.display  = 'none';
+      filterBar.style.display = 'none';
+      document.getElementById('emptyState').style.display  = 'none';
+      document.getElementById('tableFooter').style.display = 'none';
+      return;
+    }
+    noData.style.display    = 'none';
+    logTable.style.display  = '';
+    filterBar.style.display = '';
+
+    const rows = filtered();
+    const total = rows.length;
+    const pages = Math.max(1, Math.ceil(total/pageSize));
+    if (currentPage > pages) currentPage = pages;
+    const start = (currentPage-1)*pageSize;
+    const slice = rows.slice(start, start+pageSize);
+    const isWH  = activeTab === 'webhook';
+
+    document.getElementById('tableHead').innerHTML = isWH ? `<tr>
+      <th>Timestamp</th><th>Callback URL</th><th>Response Code</th><th>Latency</th><th>Event Type</th><th>Delivery</th><th>Request ID</th>
+    </tr>` : `<tr>
+      <th>Timestamp</th><th>API Key</th><th>Status Code</th><th>Method</th><th>Endpoint</th><th>Latency</th><th>Request ID</th>
+    </tr>`;
+
+    const tbody  = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+    const empty  = document.getElementById('emptyState');
+    const footer = document.getElementById('tableFooter');
+
+    if (slice.length === 0) {
+      empty.style.display  = 'block';
+      footer.style.display = 'none';
+    } else {
+      empty.style.display  = 'none';
+      footer.style.display = 'flex';
+      slice.forEach(l => {
+        const tr = document.createElement('tr');
+        if (l.requestId === highlightId) tr.classList.add('new-row');
+        const ts  = `<td style="font-size:12px;color:var(--color-text-secondary);white-space:nowrap;">${fmtTs(l.timestamp)}</td>`;
+        const st  = `<td><span class="${statusBadge(l.statusCode)}">${l.statusCode}</span></td>`;
+        const mth = `<td style="font-size:12px;font-weight:500;">${l.method}</td>`;
+        const ep  = `<td class="mono">${l.endpoint}</td>`;
+        const lat = `<td style="font-size:12px;color:var(--color-text-secondary);">${l.latency} ms</td>`;
+        const rid = `<td class="mono">${l.requestId}</td>`;
+        tr.innerHTML = isWH
+          ? `${ts}${ep}${st}${lat}<td><span class="chip">${l.eventType||'—'}</span></td><td><span class="badge badge-${l.deliveryStatus}">${l.deliveryStatus}</span></td>${rid}`
+          : `${ts}<td class="mono">${truncKey(l.apiKey)}</td>${st}${mth}${ep}${lat}${rid}`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    document.getElementById('pageInfo').textContent =
+      total===0 ? '0 results' : `${start+1}–${Math.min(start+pageSize,total)} of ${total}`;
+
+    const pgBtns = document.getElementById('pgBtns');
+    pgBtns.innerHTML = '';
+    const mkBtn = (label, page, disabled, active) => {
+      const b = document.createElement('button');
+      b.className = 'pagination__btn' + (active?' active':'');
+      b.innerHTML = label; b.disabled = disabled;
+      b.style.cssText = active ? 'background:var(--color-brand);color:#fff;border-color:var(--color-brand);' : '';
+      b.addEventListener('click', () => { currentPage=page; render(); });
+      return b;
+    };
+    const prange = total<=0 ? [] : pageRange(currentPage, pages);
+    pgBtns.appendChild(mkBtn('&#8249;', currentPage-1, currentPage===1));
+    prange.forEach(p => {
+      if (p==='…') { const s=document.createElement('span'); s.textContent='…'; s.style.padding='0 4px'; pgBtns.appendChild(s); }
+      else pgBtns.appendChild(mkBtn(p, p, false, p===currentPage));
+    });
+    pgBtns.appendChild(mkBtn('&#8250;', currentPage+1, currentPage===pages));
+  }
+
+  function pageRange(cur, total) {
+    if (total<=7) return Array.from({length:total},(_,i)=>i+1);
+    if (cur<=4)          return [1,2,3,4,5,'…',total];
+    if (cur>=total-3)    return [1,'…',total-4,total-3,total-2,total-1,total];
+    return [1,'…',cur-1,cur,cur+1,'…',total];
+  }
+
+  /* ── Tab switching ──────────────────────────── */
+  document.querySelectorAll('.tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      activeTab = btn.dataset.tab;
+      currentPage = 1;
+      csClearMulti('filterStatus');
+      csClearMulti('filterMethod');
+      csClearMulti('filterEventType');
+      csSet('filterTime', '24h');
+      const keyLabel       = document.getElementById('keyFilterLabel');
+      const keyPlaceholder = document.getElementById('keyFilterPlaceholder');
+      const keyGroup       = document.getElementById('keyFilterGroup');
+      const methodGroup    = document.getElementById('methodFilterGroup');
+      const eventTypeGroup = document.getElementById('eventTypeFilterGroup');
+      const epLabel        = document.getElementById('endpointFilterLabel');
+      const epPlaceholder  = document.getElementById('endpointFilterPlaceholder');
+      if (activeTab==='webhook') {
+        keyGroup.style.display       = 'none';
+        methodGroup.style.display    = 'none';
+        eventTypeGroup.style.display = '';
+        if (epLabel)       epLabel.textContent       = 'Callback URL';
+        if (epPlaceholder) epPlaceholder.textContent = 'All callback URLs';
+      } else {
+        if (epLabel)       epLabel.textContent       = 'Endpoint';
+        if (epPlaceholder) epPlaceholder.textContent = 'All endpoints';
+        keyLabel.textContent = 'API Key';
+        if (keyPlaceholder) keyPlaceholder.textContent = 'All keys';
+        csRebuildMulti('filterKey', API_KEYS.map(k => ({ value:k, label:truncKey(k), selected:false })));
+        keyGroup.style.display       = '';
+        methodGroup.style.display    = '';
+        eventTypeGroup.style.display = 'none';
+      }
+      refreshEndpoints();
+      render();
+    });
+  });
+
+  /* ── Filter change events ───────────────────── */
+  document.getElementById('filterBar').addEventListener('change', () => {
+    currentPage = 1; render();
+  });
+
+  /* ── Page size ──────────────────────────────── */
+  document.getElementById('pageSize').addEventListener('change', () => {
+    pageSize = parseInt(csGet('pageSize')) || 20;
+    currentPage = 1; render();
+  });
+
+  /* ── Refresh ────────────────────────────────── */
+  document.getElementById('btnRefresh').addEventListener('click', () => {
+    const btn = document.getElementById('btnRefresh');
+    btn.style.opacity = '0.5';
+    setTimeout(() => { btn.style.opacity = ''; showToast('Refreshed'); render(); }, 350);
+  });
+
+  /* ── Export CSV ─────────────────────────────── */
+  document.getElementById('btnExport').addEventListener('click', () => {
+    const rows = filtered();
+    if (!rows.length) { showToast('No data to export'); return; }
+    const isWH = activeTab === 'webhook';
+
+    // Export metadata: current filters + timezone
+    const f = getFilters();
+    const tzMin = -new Date().getTimezoneOffset();
+    const tz = 'UTC' + (tzMin >= 0 ? '+' : '-')
+      + String(Math.floor(Math.abs(tzMin) / 60)).padStart(2, '0') + ':'
+      + String(Math.abs(tzMin) % 60).padStart(2, '0');
+    const timeLabels = { '1h':'Last 1 hour','24h':'Last 24 hours','7d':'Last 7 days','30d':'Last 30 days' };
+    const list = a => a.length ? a.join(' | ') : 'All';
+    const q = v => `"${String(v).replace(/"/g,'""')}"`;
+    const meta = [
+      [ '# Exported',   `${fmtTs(new Date())} (${tz})` ],
+      [ '# Tab',        isWH ? 'Webhook' : 'API Requests' ],
+      [ '# Time Range', timeLabels[f.time] || f.time ],
+      ...(isWH
+        ? [ [ '# Event Type', list(f.eventTypes) ] ]
+        : [ [ '# API Key', list(f.keys.map(truncKey)) ], [ '# Method', list(f.methods) ] ]),
+      [ '# Status Code', list(f.statuses) ],
+      [ isWH ? '# Callback URL' : '# Endpoint', list(f.endpoints) ],
+    ].map(r => r.map(q).join(','));
+
+    const cols = isWH
+      ? ['Timestamp','Callback URL','Response Code','Latency (ms)','Event Type','Delivery Status','Request ID']
+      : ['Timestamp','API Key','Status Code','Method','Endpoint','Latency (ms)','Request ID'];
+    const csv = [...meta, '',
+      cols.map(q).join(','),
+      ...rows.map(l => {
+        const r = isWH
+          ? [fmtTs(l.timestamp), l.endpoint, l.statusCode, l.latency, l.eventType||'', l.deliveryStatus||'', l.requestId]
+          : [fmtTs(l.timestamp), truncKey(l.apiKey), l.statusCode, l.method, l.endpoint, l.latency, l.requestId];
+        return r.map(q).join(',');
+      })
+    ].join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    a.download = `log-history-${activeTab}-${Date.now()}.csv`;
+    a.click();
+    showToast('CSV downloaded');
+  });
+
+  /* ── Generate FAB ───────────────────────────── */
+  const genFab   = document.getElementById('genFab');
+  const genPanel = document.getElementById('genPanel');
+  genFab.addEventListener('click', () => genPanel.classList.toggle('open'));
+  document.addEventListener('click', e => {
+    if (!genPanel.contains(e.target) && !genFab.contains(e.target))
+      genPanel.classList.remove('open');
+  });
+
+  /* ── Empty-state toggles (Prototype Setting) ── */
+  document.querySelectorAll('.proto-switch').forEach(sw => {
+    sw.addEventListener('click', () => {
+      const tab = sw.dataset.emptyTab;
+      emptyMode[tab] = !emptyMode[tab];
+      sw.classList.toggle('on', emptyMode[tab]);
+      if (activeTab === tab) render();
+    });
+  });
+
+  function syncEmptySwitches() {
+    document.querySelectorAll('.proto-switch').forEach(sw => {
+      sw.classList.toggle('on', !!emptyMode[sw.dataset.emptyTab]);
+    });
+  }
+
+  document.querySelectorAll('.gen-type-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      let type = btn.dataset.type;
+      if (type === 'random') {
+        type = Math.random() < 0.4
+          ? rand(['webhook-delivered','webhook-failed','webhook-retrying'])
+          : rand(['success','client-error','server-error']);
+      }
+      const isWH = type.startsWith('webhook');
+      const log  = isWH ? webhookLog(type) : apiLog(type);
+      allLogs.unshift(log);
+      const targetTab = isWH ? 'webhook' : 'api';
+      // Generating data exits the no-data state for that tab
+      if (emptyMode[targetTab]) { emptyMode[targetTab] = false; syncEmptySwitches(); }
+      if (activeTab !== targetTab) document.querySelector(`[data-tab="${targetTab}"]`).click();
+      refreshEndpoints();
+      currentPage = 1;
+      render(log.requestId);
+      genPanel.classList.remove('open');
+      showToast('Log generated: ' + log.requestId);
+    });
+  });
+
+  /* ── Toast ──────────────────────────────────── */
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  /* ── Init ───────────────────────────────────── */
+  seed();
+  refreshEndpoints();
+  render();
+})();
+</script>
+
+<script src="../src/js/components.js"></script>
+</body>
+</html>

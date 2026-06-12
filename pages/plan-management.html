@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Plan Management — YouCam API Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../src/css/tokens.css" />
+  <link rel="stylesheet" href="../src/css/components.css" />
+  <style>
+    /* ── Prototype demo bar ─────────────────────────────────── */
+    .proto-bar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      height: 32px; background: #1a1a2e; color: #ccc;
+      display: flex; align-items: center; gap: 8px;
+      padding: 0 16px; font-size: 12px;
+    }
+    .proto-bar span { opacity: .6; }
+    .proto-btn {
+      padding: 2px 10px; border-radius: 4px; font-size: 11px; font-weight: 500;
+      border: 1px solid #444; background: transparent; color: #ccc; cursor: pointer;
+    }
+    .proto-btn.active { background: var(--color-brand); border-color: var(--color-brand); color: #fff; }
+    body { padding-top: 32px; }
+    .topnav { top: 32px; }
+
+    /* ── Plan Management layout ─────────────────────────────── */
+    .pm-section {
+      margin-bottom: 32px;
+      padding-bottom: 32px;
+      border-bottom: 1px solid var(--color-border-default);
+    }
+    .pm-section:last-child { border-bottom: none; margin-bottom: 0; }
+    .pm-section-title {
+      font-size: 16px; font-weight: 700; margin-bottom: 20px;
+      color: var(--color-text-default);
+    }
+
+    /* ── Current plan info box ──────────────────────────────── */
+    .pm-current-box {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px; border: 1px solid var(--color-border-default);
+      border-radius: 8px; background: var(--color-bg-fill-weak);
+      margin-bottom: 24px;
+    }
+    .pm-current-box__label {
+      font-size: 11px; font-weight: 500; text-transform: uppercase;
+      letter-spacing: .06em; color: var(--color-text-secondary); margin-bottom: 4px;
+    }
+    .pm-current-box__name { font-size: 16px; font-weight: 700; margin-bottom: 2px; }
+    .pm-current-box__meta { font-size: 13px; color: var(--color-text-secondary); }
+    .pm-current-box__price { text-align: right; }
+    .pm-current-box__price-amount { font-size: 22px; font-weight: 700; }
+    .pm-current-box__price-period { font-size: 12px; color: var(--color-text-secondary); }
+    .pm-current-box__renewal { font-size: 12px; color: var(--color-text-secondary); margin-top: 4px; }
+
+    /* ── Plans header (toggle + currency) ───────────────────── */
+    .pm-plans-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .pm-plans-header__title { font-size: 14px; font-weight: 600; }
+    .pm-plans-controls { display: flex; align-items: center; gap: 16px; }
+
+    /* Yearly toggle */
+    .toggle-wrap { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+    .toggle-wrap label { cursor: pointer; display: flex; align-items: center; gap: 8px; }
+    .toggle-switch {
+      position: relative; display: inline-block; width: 36px; height: 20px;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; inset: 0; background: #ccc; border-radius: 20px;
+      cursor: pointer; transition: background .2s;
+    }
+    .toggle-slider::before {
+      content: ''; position: absolute; width: 14px; height: 14px; border-radius: 50%;
+      background: #fff; bottom: 3px; left: 3px; transition: transform .2s;
+    }
+    .toggle-switch input:checked + .toggle-slider { background: var(--color-brand); }
+    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(16px); }
+    .toggle-save { font-size: 11px; color: var(--color-brand); font-weight: 600; }
+
+    /* Currency select */
+    .currency-select {
+      padding: 4px 8px; border: 1px solid var(--color-border-default);
+      border-radius: 6px; font-size: 13px; color: var(--color-text-default);
+      background: #fff; cursor: pointer;
+    }
+
+    /* ── Plan cards grid ────────────────────────────────────── */
+    .pm-plans-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+      margin-bottom: 16px;
+    }
+    .pm-plan-card {
+      border: 2px solid var(--color-border-default); border-radius: 10px;
+      padding: 16px; cursor: pointer; transition: border-color .15s, box-shadow .15s;
+      position: relative; background: #fff;
+    }
+    .pm-plan-card:hover { border-color: var(--color-brand); }
+    .pm-plan-card.selected {
+      border-color: var(--color-brand);
+      box-shadow: 0 0 0 3px rgba(50,133,255,.12);
+    }
+    .pm-plan-card.current-badge::before {
+      content: 'Current'; position: absolute; top: -1px; right: -1px;
+      background: var(--color-brand); color: #fff; font-size: 10px; font-weight: 600;
+      padding: 2px 8px; border-radius: 0 8px 0 6px; letter-spacing: .04em;
+    }
+    .pm-plan-card__check {
+      position: absolute; top: 12px; left: 12px;
+      width: 18px; height: 18px; border-radius: 50%;
+      border: 2px solid var(--color-border-default);
+      display: flex; align-items: center; justify-content: center;
+      background: #fff; transition: all .15s;
+    }
+    .pm-plan-card.selected .pm-plan-card__check {
+      background: var(--color-brand); border-color: var(--color-brand);
+    }
+    .pm-plan-card.selected .pm-plan-card__check::after {
+      content: ''; width: 6px; height: 4px;
+      border-left: 2px solid #fff; border-bottom: 2px solid #fff;
+      transform: rotate(-45deg) translate(1px, -1px); display: block;
+    }
+    .pm-plan-card__name {
+      font-size: 14px; font-weight: 700; margin-top: 24px; margin-bottom: 8px;
+    }
+    .pm-plan-card__price { margin-bottom: 12px; }
+    .pm-plan-card__price-amount { font-size: 22px; font-weight: 700; }
+    .pm-plan-card__price-period { font-size: 12px; color: var(--color-text-secondary); }
+    .pm-plan-card__units {
+      font-size: 12px; font-weight: 600; color: var(--color-brand); margin-bottom: 10px;
+    }
+    .pm-plan-card__features { list-style: none; }
+    .pm-plan-card__features li {
+      font-size: 12px; color: var(--color-text-secondary);
+      padding: 2px 0; display: flex; align-items: flex-start; gap: 6px;
+    }
+    .pm-plan-card__features li::before {
+      content: '✓'; color: var(--color-success); font-weight: 700; flex-shrink: 0; margin-top: 1px;
+    }
+    .pm-plan-card.enterprise { cursor: default; }
+    .pm-plan-card.enterprise:hover { border-color: var(--color-border-default); }
+
+    /* ── Plans note ─────────────────────────────────────────── */
+    .pm-plans-note {
+      font-size: 12px; color: var(--color-text-secondary); margin-bottom: 20px;
+      line-height: 1.6;
+    }
+
+    /* ── Notice box ─────────────────────────────────────────── */
+    .pm-notice {
+      margin-top: 20px; padding: 14px 16px;
+      background: var(--color-bg-fill-weak); border-radius: 8px;
+      font-size: 12px; color: var(--color-text-secondary); line-height: 1.7;
+    }
+    .pm-notice__title { font-weight: 600; margin-bottom: 6px; color: var(--color-text-default); }
+    .pm-notice ul { padding-left: 16px; }
+    .pm-notice a { color: var(--color-brand); }
+    .pm-notice__tos { margin-top: 8px; }
+
+    /* ── Scheduled downgrade state ──────────────────────────── */
+    .pm-two-plans {
+      display: grid; grid-template-columns: 1fr auto 1fr;
+      gap: 12px; align-items: center; margin-bottom: 20px;
+    }
+    .pm-plan-info-card {
+      border: 1px solid var(--color-border-default); border-radius: 8px;
+      padding: 16px; background: #fff;
+    }
+    .pm-plan-info-card__label {
+      font-size: 11px; font-weight: 500; text-transform: uppercase;
+      letter-spacing: .06em; color: var(--color-text-secondary); margin-bottom: 8px;
+    }
+    .pm-plan-info-card__name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .pm-plan-info-card__units { font-size: 13px; color: var(--color-text-secondary); margin-bottom: 4px; }
+    .pm-plan-info-card__price { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+    .pm-plan-info-card__date {
+      font-size: 12px; padding: 4px 8px; border-radius: 4px;
+      display: inline-block;
+    }
+    .pm-plan-info-card__date.end-date { background: #fff3e0; color: #e65100; }
+    .pm-plan-info-card__date.start-date { background: #e8f5e9; color: #2e7d32; }
+    .pm-arrow {
+      font-size: 20px; color: var(--color-text-secondary);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .pm-effective-note {
+      font-size: 13px; color: var(--color-text-secondary); margin-bottom: 20px; line-height: 1.6;
+    }
+    .pm-effective-note strong { color: var(--color-text-default); }
+
+    /* ── Cancel Plan section ────────────────────────────────── */
+    .pm-cancel-section { padding-top: 4px; }
+    .pm-cancel-desc {
+      font-size: 13px; color: var(--color-text-secondary); margin-bottom: 16px; line-height: 1.6;
+    }
+
+    /* ── Downgrade confirm modal extras ─────────────────────── */
+    .modal-plan-compare {
+      display: grid; grid-template-columns: 1fr auto 1fr;
+      gap: 12px; align-items: center; margin-top: 16px;
+    }
+    .modal-plan-box {
+      border: 1px solid var(--color-border-default); border-radius: 8px; padding: 12px;
+    }
+    .modal-plan-box__label {
+      font-size: 10px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .06em; color: var(--color-text-secondary); margin-bottom: 6px;
+    }
+    .modal-plan-box__name { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+    .modal-plan-box__units { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 4px; }
+    .modal-plan-box__price { font-size: 13px; font-weight: 600; }
+    .modal-arrow { text-align: center; font-size: 18px; color: var(--color-text-secondary); }
+    .modal-warning-bullets {
+      margin: 12px 0; padding: 12px 16px;
+      background: #fff8e1; border-radius: 8px; border-left: 3px solid #ffb300;
+    }
+    .modal-warning-bullets ul { padding-left: 16px; }
+    .modal-warning-bullets li { font-size: 13px; color: var(--color-text-default); margin-bottom: 4px; line-height: 1.5; }
+  </style>
+</head>
+<body>
+
+<!-- ── PROTOTYPE DEMO BAR ─────────────────────────────────── -->
+<div class="proto-bar">
+  <span>Prototype Demo State:</span>
+  <button class="proto-btn active" id="proto-btn-normal" onclick="setDemoState('normal')">Normal</button>
+  <button class="proto-btn" id="proto-btn-downgrade" onclick="setDemoState('downgrade')">Scheduled Downgrade</button>
+</div>
+
+<!-- ══ TOPNAV ══════════════════════════════════════════════════ -->
+<header class="topnav">
+  <a href="../index.html" class="topnav__logo">
+    <img src="../src/icon/API_header.svg" alt="YouCam API" style="height:24px;width:auto;" />
+  </a>
+  <ul class="topnav__links">
+    <li><a href="#">Products</a></li>
+    <li><a href="#">Pricing</a></li>
+    <li><a href="#">Documentation</a></li>
+    <li><a href="#">Playground</a></li>
+    <li><a href="#">Contact Us</a></li>
+  </ul>
+  <div class="topnav__spacer"></div>
+  <div class="topnav__avatar">
+    <img src="../src/icon/user.svg" alt="Account" style="width:40px;height:40px;display:block;" />
+  </div>
+</header>
+
+<!-- ══ APP BODY ════════════════════════════════════════════════ -->
+<div class="app-body">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar__collapse-btn" data-sidebar-toggle="sidebar" title="Toggle sidebar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline data-arrow points="15 6 9 12 15 18"/>
+      </svg>
+    </button>
+    <nav class="sidebar__nav">
+      <a class="sidebar__nav-item active" href="../index.html">
+        <img src="../src/icon/start.svg" class="nav-icon" alt="" />
+        <span class="nav-label">Get Started</span>
+      </a>
+      <a class="sidebar__nav-item" href="api-keys.html">
+        <img src="../src/icon/api-key.svg" class="nav-icon" alt="" />
+        <span class="nav-label">API Keys</span>
+      </a>
+      <a class="sidebar__nav-item" href="webhook.html">
+        <img src="../src/icon/webhook.svg" class="nav-icon" alt="" />
+        <span class="nav-label">Webhook</span>
+      </a>
+      <a class="sidebar__nav-item" href="usage.html">
+        <img src="../src/icon/usage.svg" class="nav-icon" alt="" />
+        <span class="nav-label">Usage</span>
+      </a>
+      <a class="sidebar__nav-item" href="log-history.html">
+        <img src="../src/icon/log history.svg" class="nav-icon" alt="" />
+        <span class="nav-label">Log History</span>
+      </a>
+      <a class="sidebar__nav-item" href="#">
+        <img src="../src/icon/notification.svg" class="nav-icon" alt="" />
+        <span class="nav-label">Notifications</span>
+      </a>
+      <a class="sidebar__nav-item" href="#" target="_blank" rel="noopener">
+        <img src="../src/icon/whats new.svg" class="nav-icon" alt="" />
+        <span class="nav-label">What's New</span>
+        <img src="../src/icon/external link.svg" class="nav-external" alt="" />
+      </a>
+      <a class="sidebar__nav-item" href="#">
+        <img src="../src/icon/redeem code.svg" class="nav-icon" alt="" />
+        <span class="nav-label">Redeem Code</span>
+      </a>
+      <a class="sidebar__nav-item" href="#">
+        <img src="../src/icon/payment.svg" class="nav-icon" alt="" />
+        <span class="nav-label">Payment Method</span>
+      </a>
+      <a class="sidebar__nav-item" href="#">
+        <img src="../src/icon/billing history.svg" class="nav-icon" alt="" />
+        <span class="nav-label">Billing History</span>
+      </a>
+      <a class="sidebar__nav-item" href="#">
+        <img src="../src/icon/project management.svg" class="nav-icon" alt="" />
+        <span class="nav-label">Project Management</span>
+      </a>
+    </nav>
+    <div class="sidebar__user">
+      <div class="sidebar__user-avatar">SW</div>
+      <div class="sidebar__user-info">
+        <div class="sidebar__user-name">Default</div>
+        <div class="sidebar__user-org">Steven Weng</div>
+      </div>
+      <svg class="sidebar__user-chevron" width="16" height="16" viewBox="0 0 24 24"
+        fill="none" stroke="currentColor" stroke-width="2"
+        style="margin-left:auto;flex-shrink:0;color:var(--color-text-secondary)">
+        <polyline points="18 15 12 9 6 15"/>
+      </svg>
+    </div>
+  </aside>
+
+  <!-- PAGE SHELL -->
+  <div class="page-shell">
+    <div class="page-content">
+
+      <div class="page-header">
+        <div class="page-header__row">
+          <div>
+            <h1 class="page-header__title">Plan Management</h1>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════════════════════════════════════════════════
+           STATE A: Normal (no scheduled downgrade)
+           ════════════════════════════════════════════════════ -->
+      <div id="state-normal">
+
+        <!-- CHANGE PLAN ─────────────────────────────────────── -->
+        <div class="pm-section">
+          <div class="pm-section-title">Change Plan</div>
+
+          <!-- Current Plan Box -->
+          <div class="pm-current-box">
+            <div>
+              <div class="pm-current-box__label">Current Plan</div>
+              <div class="pm-current-box__name">Pro Plan</div>
+              <div class="pm-current-box__meta">30,000 units / month</div>
+            </div>
+            <div class="pm-current-box__price">
+              <div class="pm-current-box__price-amount" id="current-price-display">$149</div>
+              <div class="pm-current-box__price-period">/month</div>
+              <div class="pm-current-box__renewal">Next renewal: 2026/07/11</div>
+            </div>
+          </div>
+
+          <!-- All Subscription Plans -->
+          <div class="pm-plans-header">
+            <span class="pm-plans-header__title">All Subscription Plans</span>
+            <div class="pm-plans-controls">
+              <div class="toggle-wrap">
+                <label>
+                  <span style="color:var(--color-text-secondary)">Monthly</span>
+                  <span class="toggle-switch">
+                    <input type="checkbox" id="toggle-yearly" onchange="updatePrices()" />
+                    <span class="toggle-slider"></span>
+                  </span>
+                  <span>Yearly</span>
+                </label>
+                <span class="toggle-save" id="yearly-save-badge" style="display:none">Save ~17%</span>
+              </div>
+              <div class="custom-select" data-select id="currency-select" style="min-width:90px">
+                <button class="custom-select__trigger" type="button">
+                  <span class="custom-select__value">USD $</span>
+                  <svg class="custom-select__chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="custom-select__dropdown">
+                  <div class="custom-select__option selected" data-value="USD">USD $</div>
+                  <div class="custom-select__option" data-value="EUR">EUR €</div>
+                  <div class="custom-select__option" data-value="JPY">JPY ¥</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Plan Cards -->
+          <div class="pm-plans-grid" id="plans-grid">
+
+            <!-- Starter Plan -->
+            <div class="pm-plan-card" data-plan="starter" onclick="selectPlan('starter')">
+              <div class="pm-plan-card__check"></div>
+              <div class="pm-plan-card__name">Starter</div>
+              <div class="pm-plan-card__price">
+                <span class="pm-plan-card__price-amount" data-monthly="$49" data-yearly="$490">$49</span>
+                <span class="pm-plan-card__price-period" id="period-starter">/ month</span>
+              </div>
+              <div class="pm-plan-card__units">10,000 units / month</div>
+              <ul class="pm-plan-card__features">
+                <li>API access</li>
+                <li>Basic support</li>
+                <li>Monthly billing</li>
+              </ul>
+            </div>
+
+            <!-- Pro Plan (current) -->
+            <div class="pm-plan-card selected current-badge" data-plan="pro" onclick="selectPlan('pro')">
+              <div class="pm-plan-card__check"></div>
+              <div class="pm-plan-card__name">Pro</div>
+              <div class="pm-plan-card__price">
+                <span class="pm-plan-card__price-amount" data-monthly="$149" data-yearly="$1,490">$149</span>
+                <span class="pm-plan-card__price-period" id="period-pro">/ month</span>
+              </div>
+              <div class="pm-plan-card__units">30,000 units / month</div>
+              <ul class="pm-plan-card__features">
+                <li>API access</li>
+                <li>Priority support</li>
+                <li>Usage analytics</li>
+                <li>Webhook support</li>
+              </ul>
+            </div>
+
+            <!-- Business Plan -->
+            <div class="pm-plan-card" data-plan="business" onclick="selectPlan('business')">
+              <div class="pm-plan-card__check"></div>
+              <div class="pm-plan-card__name">Business</div>
+              <div class="pm-plan-card__price">
+                <span class="pm-plan-card__price-amount" data-monthly="$399" data-yearly="$3,990">$399</span>
+                <span class="pm-plan-card__price-period" id="period-business">/ month</span>
+              </div>
+              <div class="pm-plan-card__units">100,000 units / month</div>
+              <ul class="pm-plan-card__features">
+                <li>API access</li>
+                <li>Dedicated support</li>
+                <li>Advanced analytics</li>
+                <li>Webhook support</li>
+                <li>SLA guarantee</li>
+              </ul>
+            </div>
+
+            <!-- Enterprise -->
+            <div class="pm-plan-card enterprise" data-plan="enterprise">
+              <div class="pm-plan-card__check" style="opacity:.3"></div>
+              <div class="pm-plan-card__name">Enterprise</div>
+              <div class="pm-plan-card__price">
+                <span class="pm-plan-card__price-amount" style="font-size:16px">Custom</span>
+              </div>
+              <div class="pm-plan-card__units" style="color:var(--color-text-secondary)">Custom units</div>
+              <ul class="pm-plan-card__features">
+                <li>Custom integration</li>
+                <li>Dedicated account manager</li>
+                <li>Custom SLA</li>
+                <li>On-premise option</li>
+              </ul>
+              <div style="margin-top:12px">
+                <a href="#" class="btn btn-outline" style="font-size:12px;width:100%;text-align:center;display:block">Contact Sales</a>
+              </div>
+            </div>
+
+          </div><!-- /pm-plans-grid -->
+
+          <div class="pm-plans-note" id="yearly-note" style="display:none">
+            * Yearly plan is billed as one payment. You save approximately 17% compared to monthly billing.
+          </div>
+
+          <!-- Change Plan Button -->
+          <button class="btn btn-primary" id="btn-change-plan" disabled onclick="handleChangePlan()">Change Plan</button>
+
+          <!-- Notice -->
+          <div class="pm-notice">
+            <div class="pm-notice__title">Notice for Plan Changes:</div>
+            <ul>
+              <li>Payment will be processed using your saved payment method. <a href="#">View Payment Info</a></li>
+              <li>The auto-renewal setting for your new plan will be automatically set to "Enabled".</li>
+            </ul>
+            <div class="pm-notice__tos"><a href="#">Terms of Service</a></div>
+          </div>
+        </div><!-- /change-plan section -->
+
+        <!-- CANCEL PLAN ─────────────────────────────────────── -->
+        <div class="pm-section pm-cancel-section" id="cancel-plan-section">
+          <div class="pm-section-title">Cancel Plan</div>
+          <div class="pm-cancel-desc">
+            Cancelling your plan will take effect at the end of your current billing period (2026/07/11).<br>
+            You can continue using API services until then.
+          </div>
+          <button class="btn btn-danger" onclick="openModal('modal-cancel')">Cancel Plan</button>
+        </div>
+
+      </div><!-- /#state-normal -->
+
+
+      <!-- ════════════════════════════════════════════════════
+           STATE B: Scheduled Downgrade
+           ════════════════════════════════════════════════════ -->
+      <div id="state-downgrade" style="display:none">
+
+        <!-- CHANGE PLAN (downgrade scheduled view) ─────────── -->
+        <div class="pm-section">
+          <div class="pm-section-title">Change Plan</div>
+
+          <!-- Current Plan + New Plan side by side -->
+          <div class="pm-two-plans">
+
+            <div class="pm-plan-info-card">
+              <div class="pm-plan-info-card__label">Current Plan</div>
+              <div class="pm-plan-info-card__name">Pro Plan</div>
+              <div class="pm-plan-info-card__units">30,000 units / month</div>
+              <div class="pm-plan-info-card__price">$149 / month</div>
+              <span class="pm-plan-info-card__date end-date">Ends: 2026/07/11</span>
+            </div>
+
+            <div class="pm-arrow">→</div>
+
+            <div class="pm-plan-info-card">
+              <div class="pm-plan-info-card__label">New Plan</div>
+              <div class="pm-plan-info-card__name">Starter Plan</div>
+              <div class="pm-plan-info-card__units">10,000 units / month</div>
+              <div class="pm-plan-info-card__price">$49 / month</div>
+              <span class="pm-plan-info-card__date start-date">Starts: 2026/07/12</span>
+            </div>
+
+          </div>
+
+          <div class="pm-effective-note">
+            <strong>Effective on: 2026/07/12</strong> &nbsp;·&nbsp;
+            You can cancel this change anytime before it takes effect.
+          </div>
+
+          <button class="btn btn-outline" onclick="handleResume()">Resume</button>
+
+          <!-- Notice -->
+          <div class="pm-notice" style="margin-top:20px">
+            <div class="pm-notice__title">Notice for Plan Changes:</div>
+            <ul>
+              <li>Payment will be processed using your saved payment method. <a href="#">View Payment Info</a></li>
+              <li>The auto-renewal setting for your new plan will be automatically set to "Enabled".</li>
+            </ul>
+            <div class="pm-notice__tos"><a href="#">Terms of Service</a></div>
+          </div>
+        </div>
+
+        <!-- Cancel Plan hidden when downgrade is scheduled -->
+
+      </div><!-- /#state-downgrade -->
+
+    </div><!-- /page-content -->
+  </div><!-- /page-shell -->
+
+</div><!-- /app-body -->
+
+<!-- ══ FOOTER ══════════════════════════════════════════════════ -->
+<footer class="site-footer">
+  <div class="site-footer__inner">
+    <div class="site-footer__brand">
+      <a href="../index.html" class="site-footer__logo">
+        <img src="../src/icon/API_footer.svg" alt="YouCam API" style="height:20px;width:auto;" />
+      </a>
+      <p class="site-footer__copy">2026 © Perfect Corp. All Rights Reserved.</p>
+      <div class="site-footer__lang">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
+        <span>English</span>
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </div>
+    </div>
+    <div class="site-footer__links">
+      <div class="site-footer__col">
+        <h4 class="site-footer__col-title">API</h4>
+        <ul>
+          <li><a href="https://yce.perfectcorp.com/ai-api" target="_blank">About API</a></li>
+          <li><a href="https://yce.perfectcorp.com/ai-api/api-pricing" target="_blank">API Plan</a></li>
+          <li><a href="https://docs.perfectcorp.com/develop/introduction" target="_blank">Document</a></li>
+          <li><a href="../index.html">API Dashboard</a></li>
+        </ul>
+      </div>
+      <div class="site-footer__col">
+        <h4 class="site-footer__col-title">Support</h4>
+        <ul>
+          <li><a href="https://yce.perfectcorp.com/ai-api/api-pricing" target="_blank">API Pricing</a></li>
+          <li><a href="https://www.perfectcorp.com/consumer/blog" target="_blank">Blogs</a></li>
+          <li><a href="https://yce.perfectcorp.com/faq" target="_blank">FAQ</a></li>
+        </ul>
+      </div>
+      <div class="site-footer__col">
+        <h4 class="site-footer__col-title">Legal</h4>
+        <ul>
+          <li><a href="#" target="_blank">Privacy Policy</a></li>
+          <li><a href="#" target="_blank">Terms of Use</a></li>
+          <li><a href="#" target="_blank">Legal Notice</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+<!-- ══ MODALS ══════════════════════════════════════════════════ -->
+
+<!-- Downgrade Confirmation Modal -->
+<div class="modal-overlay" id="modal-downgrade">
+  <div class="modal" style="max-width:520px">
+    <div class="modal__header">
+      <h3 class="modal__title">Switch to a Lower Plan?</h3>
+      <button class="modal__close" onclick="closeModal('modal-downgrade')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal__body">
+      <p style="font-size:14px;color:var(--color-text-secondary);margin-bottom:8px">
+        You're about to switch to a lower subscription plan.
+      </p>
+      <div class="modal-warning-bullets">
+        <ul>
+          <li>This change will take effect at the <strong>end of your current subscription period</strong>.</li>
+          <li>Any unused units from your current plan will <strong>expire</strong> at that time.</li>
+          <li>The new plan will be billed at the start of the next subscription period using your <strong>saved payment method</strong>.</li>
+        </ul>
+      </div>
+      <div class="modal-plan-compare">
+        <div class="modal-plan-box">
+          <div class="modal-plan-box__label">Current Plan</div>
+          <div class="modal-plan-box__name">Pro</div>
+          <div class="modal-plan-box__units">30,000 units / mo</div>
+          <div class="modal-plan-box__price">$149 / month</div>
+        </div>
+        <div class="modal-arrow">→</div>
+        <div class="modal-plan-box" id="modal-new-plan-box">
+          <div class="modal-plan-box__label">New Plan</div>
+          <div class="modal-plan-box__name" id="modal-new-plan-name">Starter</div>
+          <div class="modal-plan-box__units" id="modal-new-plan-units">10,000 units / mo</div>
+          <div class="modal-plan-box__price" id="modal-new-plan-price">$49 / month</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-downgrade')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmDowngrade()">Confirm Change</button>
+    </div>
+  </div>
+</div>
+
+<!-- Upgrade Confirmation Modal -->
+<div class="modal-overlay" id="modal-upgrade">
+  <div class="modal" style="max-width:480px">
+    <div class="modal__header">
+      <h3 class="modal__title">Upgrade Your Plan?</h3>
+      <button class="modal__close" onclick="closeModal('modal-upgrade')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal__body">
+      <p style="font-size:14px;color:var(--color-text-secondary);margin-bottom:16px">
+        Your plan will be upgraded immediately and the new billing cycle begins today.
+      </p>
+      <div class="modal-plan-compare">
+        <div class="modal-plan-box">
+          <div class="modal-plan-box__label">Current Plan</div>
+          <div class="modal-plan-box__name">Pro</div>
+          <div class="modal-plan-box__units">30,000 units / mo</div>
+          <div class="modal-plan-box__price">$149 / month</div>
+        </div>
+        <div class="modal-arrow">→</div>
+        <div class="modal-plan-box" id="modal-upgrade-plan-box">
+          <div class="modal-plan-box__label">New Plan</div>
+          <div class="modal-plan-box__name" id="modal-upgrade-plan-name">Business</div>
+          <div class="modal-plan-box__units" id="modal-upgrade-plan-units">100,000 units / mo</div>
+          <div class="modal-plan-box__price" id="modal-upgrade-plan-price">$399 / month</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-upgrade')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmUpgrade()">Confirm Upgrade</button>
+    </div>
+  </div>
+</div>
+
+<!-- Cancel Plan Modal -->
+<div class="modal-overlay" id="modal-cancel">
+  <div class="modal" style="max-width:440px">
+    <div class="modal__header">
+      <h3 class="modal__title">Cancel Your Plan?</h3>
+      <button class="modal__close" onclick="closeModal('modal-cancel')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal__body">
+      <p style="font-size:14px;color:var(--color-text-secondary);margin-bottom:8px">
+        You're about to cancel your <strong>Pro Plan</strong>.
+      </p>
+      <p style="font-size:14px;color:var(--color-text-secondary)">
+        Your plan will remain active until <strong>2026/07/11</strong>. After that, you'll lose access to all subscription benefits and remaining units will expire.
+      </p>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-primary" onclick="closeModal('modal-cancel')">Keep Plan</button>
+      <button class="btn btn-danger" onclick="confirmCancel()">Cancel Plan</button>
+    </div>
+  </div>
+</div>
+
+<!-- Resume (cancel downgrade) Confirmation Modal -->
+<div class="modal-overlay" id="modal-resume">
+  <div class="modal" style="max-width:440px">
+    <div class="modal__header">
+      <h3 class="modal__title">Cancel Scheduled Downgrade?</h3>
+      <button class="modal__close" onclick="closeModal('modal-resume')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal__body">
+      <p style="font-size:14px;color:var(--color-text-secondary)">
+        You're about to cancel the scheduled downgrade from <strong>Pro Plan</strong> to <strong>Starter Plan</strong>. Your current Pro Plan will continue to renew as scheduled.
+      </p>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-resume')">Back</button>
+      <button class="btn btn-primary" onclick="confirmResume()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="../src/js/components.js"></script>
+<script>
+  /* ── Plan data ──────────────────────────────────────────────── */
+  const PLANS = {
+    starter:  { name: 'Starter',  tier: 1, units: '10,000 units / mo', monthly: '$49',  yearly: '$490',  monthlyNum: 49,  yearlyNum: 490  },
+    pro:      { name: 'Pro',      tier: 2, units: '30,000 units / mo', monthly: '$149', yearly: '$1,490', monthlyNum: 149, yearlyNum: 1490 },
+    business: { name: 'Business', tier: 3, units: '100,000 units / mo', monthly: '$399', yearly: '$3,990', monthlyNum: 399, yearlyNum: 3990 },
+  };
+  const CURRENT_PLAN = 'pro';
+  let selectedPlan = 'pro';
+
+  /* ── Demo state toggle ──────────────────────────────────────── */
+  function setDemoState(state) {
+    document.getElementById('state-normal').style.display    = state === 'normal'    ? '' : 'none';
+    document.getElementById('state-downgrade').style.display = state === 'downgrade' ? '' : 'none';
+    document.getElementById('proto-btn-normal').classList.toggle('active',    state === 'normal');
+    document.getElementById('proto-btn-downgrade').classList.toggle('active', state === 'downgrade');
+    // Also broadcast to index.html via sessionStorage so Get Started page reflects the state
+    sessionStorage.setItem('demoDowngradeState', state);
+  }
+
+  // Initialise from URL param or sessionStorage
+  (function() {
+    const params = new URLSearchParams(window.location.search);
+    const stored = sessionStorage.getItem('demoDowngradeState');
+    const init = params.get('state') || stored || 'normal';
+    setDemoState(init);
+  })();
+
+  /* ── Plan selection ──────────────────────────────────────────── */
+  function selectPlan(plan) {
+    if (plan === 'enterprise') return;
+    selectedPlan = plan;
+    document.querySelectorAll('.pm-plan-card').forEach(card => {
+      const p = card.dataset.plan;
+      card.classList.toggle('selected', p === plan);
+    });
+    const btnChange = document.getElementById('btn-change-plan');
+    btnChange.disabled = (plan === CURRENT_PLAN);
+  }
+
+  /* ── Yearly toggle / currency ────────────────────────────────── */
+  // Listen for custom-select change on currency
+  document.addEventListener('change', (e) => {
+    if (e.target.closest('#currency-select')) updatePrices();
+  });
+
+  function updatePrices() {
+    const isYearly = document.getElementById('toggle-yearly').checked;
+    const currOpt  = document.querySelector('#currency-select .custom-select__option.selected');
+    const currency = currOpt ? currOpt.dataset.value : 'USD';
+    const rates = { USD: 1, EUR: 0.92, JPY: 158 };
+    const symbols = { USD: '$', EUR: '€', JPY: '¥' };
+    const rate = rates[currency];
+    const sym  = symbols[currency];
+
+    document.querySelectorAll('.pm-plan-card[data-plan]').forEach(card => {
+      const plan = card.dataset.plan;
+      if (!PLANS[plan]) return;
+      const base = isYearly ? PLANS[plan].yearlyNum : PLANS[plan].monthlyNum;
+      const converted = Math.round(base * rate);
+      const formatted = sym + converted.toLocaleString();
+      const amountEl = card.querySelector('.pm-plan-card__price-amount');
+      if (amountEl) amountEl.textContent = formatted;
+      const periodEl = card.querySelector('.pm-plan-card__price-period');
+      if (periodEl) periodEl.textContent = isYearly ? '/ year' : '/ month';
+    });
+
+    document.getElementById('yearly-save-badge').style.display = isYearly ? '' : 'none';
+    document.getElementById('yearly-note').style.display        = isYearly ? '' : 'none';
+  }
+
+  /* ── Change plan handler ──────────────────────────────────────── */
+  function handleChangePlan() {
+    const sel  = PLANS[selectedPlan];
+    const curr = PLANS[CURRENT_PLAN];
+    if (!sel) return;
+
+    if (sel.tier < curr.tier) {
+      // Downgrade
+      document.getElementById('modal-new-plan-name').textContent  = sel.name;
+      document.getElementById('modal-new-plan-units').textContent = sel.units;
+      document.getElementById('modal-new-plan-price').textContent = sel.monthly + ' / month';
+      openModal('modal-downgrade');
+    } else if (sel.tier > curr.tier) {
+      // Upgrade
+      document.getElementById('modal-upgrade-plan-name').textContent  = sel.name;
+      document.getElementById('modal-upgrade-plan-units').textContent = sel.units;
+      document.getElementById('modal-upgrade-plan-price').textContent = sel.monthly + ' / month';
+      openModal('modal-upgrade');
+    }
+  }
+
+  function confirmDowngrade() {
+    closeModal('modal-downgrade');
+    setDemoState('downgrade');
+    window.Toast && window.Toast.show('Downgrade scheduled. Your plan will change on 2026/07/12.', 'success');
+  }
+
+  function confirmUpgrade() {
+    closeModal('moda

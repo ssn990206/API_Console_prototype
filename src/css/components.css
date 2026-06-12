@@ -1102,3 +1102,254 @@ a:hover { text-decoration: underline; }
   color: var(--color-text-secondary);
   line-height: var(--leading-body-sm);
 }
+
+
+/* ============================================================
+   CUSTOM SELECT  (single + multi)
+
+   Single usage:
+     <div class="custom-select" data-select>
+       <button class="custom-select__trigger" type="button">
+         <span class="custom-select__value">Day</span>
+         <svg class="custom-select__chevron" ...>...</svg>
+       </button>
+       <div class="custom-select__dropdown">
+         <div class="custom-select__option selected" data-value="day">Day</div>
+         <div class="custom-select__option" data-value="week">Week</div>
+       </div>
+     </div>
+
+   Multi usage:
+     <div class="custom-select custom-select--multi" data-select data-multi>
+       <div class="custom-select__trigger" role="button" tabindex="0">
+         <div class="custom-select__tags" data-tags></div>
+         <span class="custom-select__placeholder">All API Keys</span>
+         <svg class="custom-select__chevron" ...>...</svg>
+       </div>
+       <div class="custom-select__dropdown">
+         <div class="custom-select__option custom-select__option--all" data-select-all>
+           <span class="custom-select__checkbox"></span>Select All
+         </div>
+         <div class="custom-select__option" data-value="sk-1">
+           <span class="custom-select__checkbox"></span>sk-KgGr...
+         </div>
+       </div>
+     </div>
+   ============================================================ */
+
+.custom-select {
+  position: relative;
+  display: inline-block;
+  min-width: 140px;
+  font-size: var(--text-body-sm);
+  user-select: none;
+}
+
+.custom-select__trigger {
+  width: 100%;
+  min-height: 36px;
+  padding: 0 32px 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-white);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--color-text-default);
+  font-size: var(--text-body-sm);
+  font-family: var(--font-sans);
+  text-align: left;
+  position: relative;
+  transition: border-color var(--transition-fast);
+}
+
+.custom-select__trigger:focus,
+.custom-select.open .custom-select__trigger {
+  border-color: var(--color-brand);
+  outline: none;
+}
+
+.custom-select__chevron {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--color-text-secondary);
+  transition: transform var(--transition-fast);
+  flex-shrink: 0;
+}
+.custom-select.open .custom-select__chevron {
+  transform: translateY(-50%) rotate(180deg);
+}
+
+.custom-select__dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 100%;
+  background: var(--color-white);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  z-index: 500;
+  padding: 4px 0;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.custom-select.open .custom-select__dropdown { display: block; }
+
+/* Drop-up variant — use when the select sits at the bottom of an
+   overflow:hidden container (e.g. table footer "Rows per page") */
+.custom-select--up .custom-select__dropdown {
+  top: auto;
+  bottom: calc(100% + 4px);
+}
+
+.custom-select__option {
+  padding: 8px 14px;
+  cursor: pointer;
+  color: var(--color-text-default);
+  font-size: var(--text-body-sm);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background var(--transition-fast);
+  white-space: nowrap;
+}
+.custom-select__option:hover { background: var(--color-bg-fill-weak); }
+
+.custom-select:not([data-multi]) .custom-select__option.selected {
+  color: var(--color-brand);
+  font-weight: var(--font-weight-medium);
+}
+
+.custom-select__option--all {
+  border-bottom: 1px solid var(--color-border-default);
+  padding-bottom: 10px;
+  margin-bottom: 2px;
+}
+
+.custom-select__checkbox {
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: #fff;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+.custom-select__option.selected .custom-select__checkbox {
+  background: var(--color-brand);
+  border-color: var(--color-brand);
+}
+.custom-select__option.selected .custom-select__checkbox::after {
+  content: '';
+  width: 8px;
+  height: 5px;
+  border-left: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  transform: rotate(-45deg) translate(1px, -1px);
+  display: block;
+}
+
+.custom-select--multi .custom-select__trigger {
+  flex-wrap: wrap;
+  padding: 4px 32px 4px 6px;
+  min-height: 36px;
+  gap: 4px;
+  align-items: center;
+  cursor: pointer;
+}
+
+.custom-select__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.custom-select__placeholder {
+  color: var(--color-text-secondary);
+  font-size: var(--text-body-sm);
+  padding: 0 4px;
+}
+
+.custom-select__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px 2px 8px;
+  background: var(--color-brand-bg-solid);
+  color: var(--color-brand);
+  border-radius: 4px;
+  font-size: var(--text-caption);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  max-width: 140px;
+}
+
+.custom-select__tag-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.custom-select__tag-remove {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--color-brand);
+  opacity: .65;
+  flex-shrink: 0;
+  border-radius: 2px;
+  padding: 1px;
+}
+.custom-select__tag-remove:hover { opacity: 1; }
+play: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.custom-select__placeholder {
+  color: var(--color-text-secondary);
+  font-size: var(--text-body-sm);
+  padding: 0 4px;
+}
+
+/* Selected tag chip */
+.custom-select__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px 2px 8px;
+  background: var(--color-brand-bg-solid);
+  color: var(--color-brand);
+  border-radius: 4px;
+  font-size: var(--text-caption);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  max-width: 140px;
+}
+
+.custom-select__tag-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.custom-select__tag-remove {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--color-brand);
+  opacity: .65;
+  flex-shrink: 0;
+  border-radius: 2px;
+  padding: 1px;
+}
+.custom-select__tag-remove:hover { opacity: 1; }

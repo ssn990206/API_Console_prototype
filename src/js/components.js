@@ -1,5 +1,5 @@
 /**
- * YouCam API Console — Components JS
+ * YouCam API Console — Components JS  (custom-select: single + multi)
  * All interactions use event delegation so they work after SPA content swaps.
  * No explicit init() call needed.
  */
@@ -255,4 +255,150 @@
     },
   };
 
+
+  /*   CUSTOM SELECT  (single + multi)  — event delegation
+     ============================================================ */
+
+  function getOptionLabel(opt) {
+    let text = '';
+    opt.childNodes.forEach(node => {
+      if (node.nodeType === Node.TEXT_NODE) text += node.textContent;
+    });
+    return text.trim() || opt.textContent.trim();
+  }
+
+  function getMultiValues(sel) {
+    return Array.from(
+      sel.querySelectorAll('.custom-select__option:not([data-select-all]).selected')
+    ).map(o => ({ value: o.dataset.value, label: getOptionLabel(o) }));
+  }
+
+  function dispatchMultiChange(sel) {
+    const selected = getMultiValues(sel);
+    sel.dispatchEvent(new CustomEvent('change', {
+      bubbles: true,
+      detail: {
+        values: selected.map(s => s.value),
+        labels: selected.map(s => s.label),
+      },
+    }));
+  }
+
+  function updateMultiTags(sel) {
+    const tagsEl      = sel.querySelector('.custom-select__tags');
+    const placeholder = sel.querySelector('.custom-select__placeholder');
+    if (!tagsEl) return;
+    const selected = Array.from(
+      sel.querySelectorAll('.custom-select__option:not([data-select-all]).selected')
+    );
+    tagsEl.innerHTML = '';
+    if (selected.length === 0) {
+      if (placeholder) placeholder.style.display = '';
+    } else {
+      if (placeholder) placeholder.style.display = 'none';
+      selected.forEach(opt => {
+        const label = getOptionLabel(opt);
+        const tag   = document.createElement('span');
+        tag.className = 'custom-select__tag';
+        tag.dataset.tagValue = opt.dataset.value;
+        tag.innerHTML =
+          `<span class="custom-select__tag-text">${label}</span>` +
+          `<span class="custom-select__tag-remove" title="Remove">` +
+            `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">` +
+              `<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>` +
+            `</svg>` +
+          `</span>`;
+        tagsEl.appendChild(tag);
+      });
+    }
+  }
+
+  // Open / close trigger
+  document.addEventListener('click', (e) => {
+    const trigger = e.target.closest('.custom-select__trigger');
+    if (trigger) {
+      e.stopPropagation();
+      const sel     = trigger.closest('.custom-select');
+      const wasOpen = sel.classList.contains('open');
+      document.querySelectorAll('.custom-select.open').forEach(s => s.classList.remove('open'));
+      if (!wasOpen) sel.classList.add('open');
+      return;
+    }
+    if (!e.target.closest('.custom-select__dropdown') && !e.target.closest('.custom-select__trigger')) {
+      document.querySelectorAll('.custom-select.open').forEach(s => s.classList.remove('open'));
+    }
+  });
+
+  // Single-select: option click
+  document.addEventListener('click', (e) => {
+    const opt = e.target.closest('.custom-select__option');
+    if (!opt) return;
+    const sel = opt.closest('.custom-select');
+    if (!sel || sel.hasAttribute('data-multi')) return;
+    sel.querySelectorAll('.custom-select__option').forEach(o => o.classList.remove('selected'));
+    opt.classList.add('selected');
+    const valueEl = sel.querySelector('.custom-select__value');
+    if (valueEl) valueEl.textContent = getOptionLabel(opt);
+    sel.classList.remove('open');
+    sel.dispatchEvent(new CustomEvent('change', {
+      bubbles: true,
+      detail: { value: opt.dataset.value, label: getOptionLabel(opt) }
+    }));
+  });
+
+  // Multi-select: option click (toggle checkbox)
+  document.addEventListener('click', (e) => {
+    const opt = e.target.closest('.custom-select__option');
+    if (!opt) return;
+    const sel = opt.closest('[data-multi]');
+    if (!sel) return;
+    e.stopPropagation();
+    const isAll  = opt.hasAttribute('data-select-all');
+    const allOpt = sel.querySelector('[data-select-all]');
+    const opts   = Array.from(sel.querySelectorAll('.custom-select__option:not([data-select-all])'));
+    if (isAll) {
+      const allSelected = opts.every(o => o.classList.contains('selected'));
+      opts.forEach(o => o.classList.toggle('selected', !allSelected));
+      if (allOpt) allOpt.classList.toggle('selected', !allSelected);
+    } else {
+      opt.classList.toggle('selected');
+      const allChecked = opts.every(o => o.classList.contains('selected'));
+      if (allOpt) allOpt.classList.toggle('selected', allChecked);
+    }
+    updateMultiTags(sel);
+    dispatchMultiChange(sel);
+  });
+
+  // Multi-select: tag x remove
+  document.addEventListener('click', (e) => {
+    const rm = e.target.closest('.custom-select__tag-remove');
+    if (!rm) return;
+    e.stopPropagation();
+    const tag = rm.closest('.custom-select__tag');
+    const sel = rm.closest('[data-multi]');
+    if (!tag || !sel) return;
+    const opt = sel.querySelector(`.custom-select__option[data-value="${tag.dataset.tagValue}"]`);
+    if (opt) {
+      opt.classList.remove('selected');
+      const allOpt = sel.querySelector('[data-select-all]');
+      if (allOpt) allOpt.classList.remove('selected');
+    }
+    updateMultiTags(sel);
+    dispatchMultiChange(sel);
+  });
+
+  // Public helpers for pages that rebuild multi-select options dynamically
+  window.CustomSelect = {
+    updateTags: updateMultiTags,
+    getValues:  (sel) => getMultiValues(sel).map(s => s.value),
+  };
+
+  // Escape closes any open custom-select
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.custom-select.open').forEach(s => s.classList.remove('open'));
+    }
+  });
+
 })();
+

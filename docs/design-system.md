@@ -233,11 +233,70 @@ Based on a 4px base unit:
 - Inline label to the right
 
 ### 7.12 Select / Dropdown
-- Height: `38px`
-- Border: `1px solid rgba(17,24,26,0.2)`
+
+Two variants share the same trigger and panel styling; only the interior differs.
+
+#### Single-select (`.custom-select`)
+- Trigger height: `36px`, `padding: 0 32px 0 12px`
+- Border: `1px solid rgba(17,24,26,0.2)`, focus/open: `var(--color-brand)`
 - Border radius: `8px`
-- Chevron icon right-aligned
-- Dropdown panel: white bg, `border-radius: 8px`, shadow
+- Chevron icon right-aligned; rotates 180° when open
+- Dropdown panel: white bg, `border-radius: 8px`, `box-shadow: var(--shadow-md)`, `z-index: 500`
+- Active option: brand-blue text + medium weight; no checkbox
+- HTML:
+  ```html
+  <div class="custom-select" data-select>
+    <button class="custom-select__trigger" type="button">
+      <span class="custom-select__value">Day</span>
+      <svg class="custom-select__chevron" width="14" height="14" viewBox="0 0 24 24"
+           fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="6 9 12 15 18 9"/>
+      </svg>
+    </button>
+    <div class="custom-select__dropdown">
+      <div class="custom-select__option selected" data-value="day">Day</div>
+      <div class="custom-select__option" data-value="week">Week</div>
+      <div class="custom-select__option" data-value="month">Month</div>
+    </div>
+  </div>
+  ```
+
+#### Multi-select (`.custom-select.custom-select--multi`)
+- Trigger wraps selected chips; no fixed height — grows with content (min `36px`)
+- Selected items shown as tag chips: `background: #f5f9ff`, brand-blue text + × remove button
+- Dropdown has "Select All" option separated by a bottom border, followed by individual checkboxes
+- Checkbox: `16×16px` square, `border-radius: 3px`; checked state fills brand blue with a white checkmark
+- "Select All" syncs with individual options: auto-checks if all selected, auto-unchecks if any deselected
+- Tags are removed by clicking × without opening the dropdown
+- HTML:
+  ```html
+  <div class="custom-select custom-select--multi" data-select data-multi>
+    <div class="custom-select__trigger" role="button" tabindex="0">
+      <div class="custom-select__tags" data-tags></div>
+      <span class="custom-select__placeholder">All API Keys</span>
+      <svg class="custom-select__chevron" width="14" height="14" viewBox="0 0 24 24"
+           fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="6 9 12 15 18 9"/>
+      </svg>
+    </div>
+    <div class="custom-select__dropdown">
+      <div class="custom-select__option custom-select__option--all" data-select-all>
+        <span class="custom-select__checkbox"></span>Select All
+      </div>
+      <div class="custom-select__option" data-value="sk-1">
+        <span class="custom-select__checkbox"></span>sk-KgGrOmdrpsoSfyndgwXD…
+      </div>
+    </div>
+  </div>
+  ```
+
+#### Behaviour (both variants)
+- Clicking trigger toggles open; clicking outside closes
+- Only one `.custom-select` can be open at a time
+- Escape key closes any open dropdown
+- JS dispatches a `change` CustomEvent on the `.custom-select` element:
+  - Single: `detail: { value, label }`
+  - Multi: `detail: [{ value, label }, …]`
 
 ### 7.13 Tabs
 - Underline style
