@@ -318,7 +318,7 @@
         <div class="page-header__row">
           <div>
             <h1 class="page-header__title">Log History</h1>
-            <p class="page-header__description">View and filter API call logs. Data retained for 30 days.</p>
+            <p class="page-header__description">Monitor your API activity and Webhook deliveries. Logs are available for the past 30 days to help you debug and troubleshoot.</p>
           </div>
         </div>
       </div>
@@ -471,12 +471,12 @@
             </svg>
             Refresh
           </button>
-          <button class="btn btn-outline" id="btnExport" style="height:38px;padding:0 14px;">
+          <button class="btn btn-outline" id="btnExport" >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
               <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
-            Export CSV
+            Download CSV
           </button>
         </div>
       </div>
@@ -939,7 +939,7 @@
     setTimeout(() => { btn.style.opacity = ''; showToast('Refreshed'); render(); }, 350);
   });
 
-  /* ── Export CSV ─────────────────────────────── */
+  /* ── Download CSV ─────────────────────────────── */
   document.getElementById('btnExport').addEventListener('click', () => {
     const rows = filtered();
     if (!rows.length) { showToast('No data to export'); return; }
