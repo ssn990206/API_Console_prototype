@@ -344,7 +344,29 @@
               <div class="custom-select__option selected" data-value="24h">Last 24 hours</div>
               <div class="custom-select__option" data-value="7d">Last 7 days</div>
               <div class="custom-select__option" data-value="30d">Last 30 days</div>
+              <div class="custom-select__option" data-value="custom">Custom…</div>
             </div>
+          </div>
+        </div>
+
+        <!-- Custom date range — shown when Time Range = Custom -->
+        <div class="filter-bar__group" id="customDateGroup" style="display:none;">
+          <span class="filter-bar__label">From – To</span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <input type="date" class="input" id="dateFrom" style="width:140px;" />
+            <span style="font-size:var(--text-body-sm);color:var(--color-text-secondary);">–</span>
+            <input type="date" class="input" id="dateTo" style="width:140px;" />
+          </div>
+        </div>
+
+        <!-- Request ID search — both tabs -->
+        <div class="filter-bar__group">
+          <span class="filter-bar__label">Request ID</span>
+          <div style="position:relative;">
+            <input type="text" class="input" id="filterRequestId" placeholder="Search request ID…" style="width:190px;padding-left:30px;" />
+            <svg style="position:absolute;left:8px;top:50%;transform:translateY(-50%);color:var(--color-text-secondary);pointer-events:none;" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
           </div>
         </div>
 
@@ -374,46 +396,21 @@
           </div>
         </div>
 
-        <!-- Endpoint (API) / Callback URL (Webhook) -->
+        <!-- Endpoint (API) / URL (Webhook) -->
         <div class="filter-bar__group">
           <span class="filter-bar__label" id="endpointFilterLabel">Endpoint</span>
-          <div class="custom-select custom-select--multi" data-select data-multi id="filterEndpoint" style="min-width:200px;">
-            <div class="custom-select__trigger" role="button" tabindex="0">
-              <div class="custom-select__tags" data-tags></div>
-              <span class="custom-select__placeholder" id="endpointFilterPlaceholder">All endpoints</span>
-              <svg class="custom-select__chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-            </div>
-            <div class="custom-select__dropdown">
-              <div class="custom-select__option custom-select__option--all" data-select-all>
-                <span class="custom-select__checkbox"></span>Select All
-              </div>
-            </div>
+          <div style="position:relative;display:flex;align-items:center;">
+            <svg style="position:absolute;left:8px;color:var(--color-text-tertiary);pointer-events:none;" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" class="input" id="filterEndpoint" placeholder="Search endpoint…" style="width:200px;padding-left:28px;" />
           </div>
         </div>
 
-        <!-- Status Code -->
+        <!-- Status Code / Response Code -->
         <div class="filter-bar__group">
-          <span class="filter-bar__label">Status Code</span>
-          <div class="custom-select custom-select--multi" data-select data-multi id="filterStatus" style="min-width:140px;">
-            <div class="custom-select__trigger" role="button" tabindex="0">
-              <div class="custom-select__tags" data-tags></div>
-              <span class="custom-select__placeholder">All</span>
-              <svg class="custom-select__chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-            </div>
-            <div class="custom-select__dropdown">
-              <div class="custom-select__option custom-select__option--all" data-select-all>
-                <span class="custom-select__checkbox"></span>Select All
-              </div>
-              <div class="custom-select__option" data-value="2xx">
-                <span class="custom-select__checkbox"></span>2xx
-              </div>
-              <div class="custom-select__option" data-value="4xx">
-                <span class="custom-select__checkbox"></span>4xx
-              </div>
-              <div class="custom-select__option" data-value="5xx">
-                <span class="custom-select__checkbox"></span>5xx
-              </div>
-            </div>
+          <span class="filter-bar__label" id="statusFilterLabel">Status Code</span>
+          <div style="position:relative;display:flex;align-items:center;">
+            <svg style="position:absolute;left:8px;color:var(--color-text-tertiary);pointer-events:none;" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" class="input" id="filterStatus" placeholder="e.g. 200, 4xx…" style="width:140px;padding-left:28px;" />
           </div>
         </div>
 
@@ -470,13 +467,6 @@
               <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
             </svg>
             Refresh
-          </button>
-          <button class="btn btn-outline" id="btnExport" >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-            </svg>
-            Download CSV
           </button>
         </div>
       </div>
@@ -601,6 +591,17 @@
                       'https://hooks.yourapp.com/webhooks/payment/completed',
                       'https://hooks.yourapp.com/webhooks/session/expired'];
   const EVENT_TYPES = ['success_pipeline', 'fail_pipeline'];
+  const FEATURES    = ['Virtual Try-On', 'Hair Color', 'Skin Analysis', 'Face Reshape', 'Avatar Generator', 'Headshot Generator'];
+  const EP_FEATURE  = {
+    '/v1/makeup/virtual-tryon': 'Virtual Try-On',
+    '/v1/hair/color':           'Hair Color',
+    '/v1/skin/analysis':        'Skin Analysis',
+    '/v1/face/reshape':         'Face Reshape',
+    '/v1/avatar/generate':      'Avatar Generator',
+    '/v1/headshot/generate':    'Headshot Generator',
+    '/v1/usage/summary':        'Headshot Generator',
+    '/v1/keys/list':            'Virtual Try-On',
+  };
   const truncKey = k => '...' + k.slice(-4);
 
   /* ── State ─────────────────────────────────── */
@@ -724,7 +725,8 @@
     const codes = { success: [200,200,200,201,204], 'client-error': [400,401,403,404,422,429], 'server-error': [500,502,503,504] };
     return { kind:'api', requestId:newId(), timestamp: ts||new Date(),
       statusCode: rand(codes[type]||codes.success), method: rand(METHODS),
-      endpoint: rand(API_EPS), latency: rInt(8,2400), apiKey: rand(API_KEYS) };
+      endpoint: rand(API_EPS), latency: rInt(8,2400), apiKey: rand(API_KEYS),
+      get feature() { return EP_FEATURE[this.endpoint] || rand(FEATURES); } };
   }
   function webhookLog(type, ts) {
     const delivMap = { 'webhook-delivered':'delivered', 'webhook-failed':'failed', 'webhook-retrying':'retrying' };
@@ -749,11 +751,14 @@
   function getFilters() {
     return {
       time:       csGet('filterTime'),
+      requestId:  document.getElementById('filterRequestId').value.trim().toLowerCase(),
       keys:       csGetMulti('filterKey'),
-      statuses:   csGetMulti('filterStatus'),
       methods:    csGetMulti('filterMethod'),
       eventTypes: csGetMulti('filterEventType'),
-      endpoints:  csGetMulti('filterEndpoint'),
+      endpoint:   document.getElementById('filterEndpoint').value.trim().toLowerCase(),
+      status:     document.getElementById('filterStatus').value.trim().toLowerCase(),
+      dateFrom:   document.getElementById('dateFrom').value,
+      dateTo:     document.getElementById('dateTo').value,
     };
   }
 
@@ -762,24 +767,23 @@
     const cutoffs = { '1h': 3600000, '24h': 86400000, '7d': 7*86400000, '30d': 30*86400000 };
     return allLogs.filter(l => {
       if (l.kind !== activeTab) return false;
-      if (cutoffs[f.time] && l.timestamp.getTime() < now - cutoffs[f.time]) return false;
+      if (f.time === 'custom') {
+        if (f.dateFrom && l.timestamp < new Date(f.dateFrom)) return false;
+        if (f.dateTo   && l.timestamp > new Date(f.dateTo + 'T23:59:59')) return false;
+      } else if (cutoffs[f.time] && l.timestamp.getTime() < now - cutoffs[f.time]) return false;
+      if (f.requestId && !l.requestId.toLowerCase().includes(f.requestId)) return false;
       if (f.keys.length) { const v = l.kind==='api'?l.apiKey:l.webhookName; if (!f.keys.includes(v)) return false; }
-      if (f.statuses.length) {
-        const cls = l.statusCode>=500 ? '5xx' : (l.statusCode>=400 ? '4xx' : (l.statusCode>=200&&l.statusCode<300 ? '2xx' : ''));
-        if (!f.statuses.includes(cls)) return false;
+      if (f.endpoint && !l.endpoint.toLowerCase().includes(f.endpoint)) return false;
+      if (f.status) {
+        const code = String(l.statusCode);
+        // support "2xx", "4xx", "5xx" wildcards or exact/partial match
+        const pattern = f.status.replace(/x/g, '\\d');
+        if (!new RegExp('^' + pattern).test(code) && !code.includes(f.status.replace(/x/g,''))) return false;
       }
       if (f.methods.length    && !f.methods.includes(l.method))        return false;
       if (f.eventTypes.length && !f.eventTypes.includes(l.eventType))  return false;
-      if (f.endpoints.length  && !f.endpoints.includes(l.endpoint))    return false;
       return true;
     });
-  }
-
-  /* ── Endpoint dropdown ──────────────────────── */
-  function refreshEndpoints() {
-    const cur = csGetMulti('filterEndpoint');
-    const eps = [...new Set(allLogs.filter(l=>l.kind===activeTab).map(l=>l.endpoint))].sort();
-    csRebuildMulti('filterEndpoint', eps.map(ep => ({ value:ep, label:ep, selected: cur.includes(ep) })));
   }
 
   /* ── Status badge class ─────────────────────── */
@@ -821,9 +825,9 @@
     const isWH  = activeTab === 'webhook';
 
     document.getElementById('tableHead').innerHTML = isWH ? `<tr>
-      <th>Timestamp</th><th>Callback URL</th><th>Response Code</th><th>Latency</th><th>Event Type</th><th>Delivery</th><th>Request ID</th>
+      <th>Timestamp</th><th>Request ID</th><th>URL</th><th>Response Code</th><th>Latency</th><th>Event Type</th><th>Delivery</th>
     </tr>` : `<tr>
-      <th>Timestamp</th><th>API Key</th><th>Status Code</th><th>Method</th><th>Endpoint</th><th>Latency</th><th>Request ID</th>
+      <th>Timestamp</th><th>Request ID</th><th>API Key</th><th>Endpoint</th><th>Status Code</th><th>Method</th><th>Latency</th>
     </tr>`;
 
     const tbody  = document.getElementById('tableBody');
@@ -847,8 +851,8 @@
         const lat = `<td style="font-size:12px;color:var(--color-text-secondary);">${l.latency} ms</td>`;
         const rid = `<td class="mono">${l.requestId}</td>`;
         tr.innerHTML = isWH
-          ? `${ts}${ep}${st}${lat}<td><span class="chip">${l.eventType||'—'}</span></td><td><span class="badge badge-${l.deliveryStatus}">${l.deliveryStatus}</span></td>${rid}`
-          : `${ts}<td class="mono">${truncKey(l.apiKey)}</td>${st}${mth}${ep}${lat}${rid}`;
+          ? `${ts}${rid}${ep}${st}${lat}<td><span class="chip">${l.eventType||'—'}</span></td><td><span class="badge badge-${l.deliveryStatus}">${l.deliveryStatus}</span></td>`
+          : `${ts}${rid}<td class="mono">${truncKey(l.apiKey)}</td>${ep}${st}${mth}${lat}`;
         tbody.appendChild(tr);
       });
     }
@@ -889,26 +893,32 @@
       btn.classList.add('active');
       activeTab = btn.dataset.tab;
       currentPage = 1;
-      csClearMulti('filterStatus');
       csClearMulti('filterMethod');
       csClearMulti('filterEventType');
       csSet('filterTime', '24h');
+      document.getElementById('filterRequestId').value = '';
+      document.getElementById('filterEndpoint').value  = '';
+      document.getElementById('filterStatus').value    = '';
+      document.getElementById('customDateGroup').style.display = 'none';
       const keyLabel       = document.getElementById('keyFilterLabel');
       const keyPlaceholder = document.getElementById('keyFilterPlaceholder');
       const keyGroup       = document.getElementById('keyFilterGroup');
       const methodGroup    = document.getElementById('methodFilterGroup');
       const eventTypeGroup = document.getElementById('eventTypeFilterGroup');
       const epLabel        = document.getElementById('endpointFilterLabel');
-      const epPlaceholder  = document.getElementById('endpointFilterPlaceholder');
+      const statusLabel    = document.getElementById('statusFilterLabel');
+      const epInput        = document.getElementById('filterEndpoint');
       if (activeTab==='webhook') {
         keyGroup.style.display       = 'none';
         methodGroup.style.display    = 'none';
         eventTypeGroup.style.display = '';
-        if (epLabel)       epLabel.textContent       = 'Callback URL';
-        if (epPlaceholder) epPlaceholder.textContent = 'All callback URLs';
+        if (epLabel)    epLabel.textContent    = 'URL';
+        if (epInput)    epInput.placeholder    = 'Search URL…';
+        if (statusLabel) statusLabel.textContent = 'Response Code';
       } else {
-        if (epLabel)       epLabel.textContent       = 'Endpoint';
-        if (epPlaceholder) epPlaceholder.textContent = 'All endpoints';
+        if (epLabel)    epLabel.textContent    = 'Endpoint';
+        if (epInput)    epInput.placeholder    = 'Search endpoint…';
+        if (statusLabel) statusLabel.textContent = 'Status Code';
         keyLabel.textContent = 'API Key';
         if (keyPlaceholder) keyPlaceholder.textContent = 'All keys';
         csRebuildMulti('filterKey', API_KEYS.map(k => ({ value:k, label:truncKey(k), selected:false })));
@@ -916,13 +926,38 @@
         methodGroup.style.display    = '';
         eventTypeGroup.style.display = 'none';
       }
-      refreshEndpoints();
       render();
     });
   });
 
   /* ── Filter change events ───────────────────── */
-  document.getElementById('filterBar').addEventListener('change', () => {
+  document.getElementById('filterBar').addEventListener('change', e => {
+    // Show/hide custom date range when filterTime changes
+    const sel = e.target.closest('.custom-select');
+    if (sel && sel.id === 'filterTime') {
+      const val = e.detail?.value ?? csGet('filterTime');
+      document.getElementById('customDateGroup').style.display = val === 'custom' ? '' : 'none';
+    }
+    currentPage = 1; render();
+  });
+
+  document.getElementById('filterRequestId').addEventListener('input', () => {
+    currentPage = 1; render();
+  });
+
+  document.getElementById('filterEndpoint').addEventListener('input', () => {
+    currentPage = 1; render();
+  });
+
+  document.getElementById('filterStatus').addEventListener('input', () => {
+    currentPage = 1; render();
+  });
+
+  document.getElementById('dateFrom').addEventListener('change', () => {
+    currentPage = 1; render();
+  });
+
+  document.getElementById('dateTo').addEventListener('change', () => {
     currentPage = 1; render();
   });
 
@@ -937,51 +972,6 @@
     const btn = document.getElementById('btnRefresh');
     btn.style.opacity = '0.5';
     setTimeout(() => { btn.style.opacity = ''; showToast('Refreshed'); render(); }, 350);
-  });
-
-  /* ── Download CSV ─────────────────────────────── */
-  document.getElementById('btnExport').addEventListener('click', () => {
-    const rows = filtered();
-    if (!rows.length) { showToast('No data to export'); return; }
-    const isWH = activeTab === 'webhook';
-
-    // Export metadata: current filters + timezone
-    const f = getFilters();
-    const tzMin = -new Date().getTimezoneOffset();
-    const tz = 'UTC' + (tzMin >= 0 ? '+' : '-')
-      + String(Math.floor(Math.abs(tzMin) / 60)).padStart(2, '0') + ':'
-      + String(Math.abs(tzMin) % 60).padStart(2, '0');
-    const timeLabels = { '1h':'Last 1 hour','24h':'Last 24 hours','7d':'Last 7 days','30d':'Last 30 days' };
-    const list = a => a.length ? a.join(' | ') : 'All';
-    const q = v => `"${String(v).replace(/"/g,'""')}"`;
-    const meta = [
-      [ '# Exported',   `${fmtTs(new Date())} (${tz})` ],
-      [ '# Tab',        isWH ? 'Webhook' : 'API Requests' ],
-      [ '# Time Range', timeLabels[f.time] || f.time ],
-      ...(isWH
-        ? [ [ '# Event Type', list(f.eventTypes) ] ]
-        : [ [ '# API Key', list(f.keys.map(truncKey)) ], [ '# Method', list(f.methods) ] ]),
-      [ '# Status Code', list(f.statuses) ],
-      [ isWH ? '# Callback URL' : '# Endpoint', list(f.endpoints) ],
-    ].map(r => r.map(q).join(','));
-
-    const cols = isWH
-      ? ['Timestamp','Callback URL','Response Code','Latency (ms)','Event Type','Delivery Status','Request ID']
-      : ['Timestamp','API Key','Status Code','Method','Endpoint','Latency (ms)','Request ID'];
-    const csv = [...meta, '',
-      cols.map(q).join(','),
-      ...rows.map(l => {
-        const r = isWH
-          ? [fmtTs(l.timestamp), l.endpoint, l.statusCode, l.latency, l.eventType||'', l.deliveryStatus||'', l.requestId]
-          : [fmtTs(l.timestamp), truncKey(l.apiKey), l.statusCode, l.method, l.endpoint, l.latency, l.requestId];
-        return r.map(q).join(',');
-      })
-    ].join('\n');
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-    a.download = `log-history-${activeTab}-${Date.now()}.csv`;
-    a.click();
-    showToast('CSV downloaded');
   });
 
   /* ── Generate FAB ───────────────────────────── */
@@ -1024,7 +1014,6 @@
       // Generating data exits the no-data state for that tab
       if (emptyMode[targetTab]) { emptyMode[targetTab] = false; syncEmptySwitches(); }
       if (activeTab !== targetTab) document.querySelector(`[data-tab="${targetTab}"]`).click();
-      refreshEndpoints();
       currentPage = 1;
       render(log.requestId);
       genPanel.classList.remove('open');
@@ -1042,7 +1031,6 @@
 
   /* ── Init ───────────────────────────────────── */
   seed();
-  refreshEndpoints();
   render();
 })();
 </script>
