@@ -187,6 +187,90 @@
     }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+    /* ── Detail Panel ── */
+    .detail-panel {
+      position: fixed;
+      top: 56px;
+      right: 0;
+      width: 420px;
+      height: calc(100vh - 56px);
+      background: var(--color-white);
+      border-left: 1px solid var(--color-border-default);
+      z-index: 200;
+      transform: translateX(100%);
+      transition: transform 0.22s cubic-bezier(0.4,0,0.2,1);
+      display: flex;
+      flex-direction: column;
+      box-shadow: -4px 0 24px rgba(0,0,0,0.08);
+    }
+    .detail-panel.open { transform: translateX(0); }
+    .detail-panel__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--color-border-default);
+      flex-shrink: 0;
+    }
+    .detail-panel__title { font-size: 15px; font-weight: 600; color: var(--color-text-default); }
+    .detail-panel__body { flex: 1; overflow-y: auto; padding: 20px; }
+    .detail-panel__row { margin-bottom: 14px; }
+    .detail-panel__label {
+      font-size: 11px;
+      color: var(--color-text-secondary);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 3px;
+    }
+    .detail-panel__value { font-size: 13px; color: var(--color-text-default); word-break: break-all; }
+    .detail-panel__divider { border: none; border-top: 1px solid var(--color-border-default); margin: 8px 0 16px; }
+
+    /* Collapsible sections */
+    .dp-section { margin-bottom: 8px; border: 1px solid var(--color-border-default); border-radius: 8px; overflow: hidden; }
+    .dp-section__hdr {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 11px 14px; cursor: pointer; user-select: none;
+      background: var(--color-bg-fill-grey);
+      transition: background var(--transition-fast);
+    }
+    .dp-section__hdr:hover { background: var(--color-border-default); }
+    .dp-section__title { font-size: 13px; font-weight: 500; color: var(--color-text-default); }
+    .dp-section__chevron { color: var(--color-text-secondary); transition: transform 0.2s; flex-shrink:0; }
+    .dp-section.open .dp-section__chevron { transform: rotate(180deg); }
+    .dp-section__body { display: none; border-top: 1px solid var(--color-border-default); }
+    .dp-section.open .dp-section__body { display: block; }
+
+    /* JSON block */
+    .json-block {
+      background: #1a1d23;
+      padding: 14px 14px 8px;
+      font-family: var(--font-mono, monospace);
+      font-size: 12px;
+      line-height: 1.65;
+      overflow-x: auto;
+      color: #e2e8f0;
+      white-space: pre;
+    }
+    .json-key    { color: #7dd3fc; }
+    .json-str    { color: #86efac; }
+    .json-num    { color: #fbbf24; }
+    .json-bool   { color: #f472b6; }
+    .json-null   { color: #94a3b8; }
+    .json-plain  { color: var(--color-text-default); font-family: var(--font-sans); white-space: normal; padding: 12px 14px; font-size: 13px; background: #fff; }
+    .json-copy-btn {
+      display: flex; align-items: center; gap: 5px;
+      width: 100%; padding: 7px 14px;
+      background: #1a1d23; border: none; border-top: 1px solid #2d3139;
+      color: #64748b; font-size: 11px; font-family: var(--font-sans);
+      cursor: pointer; text-align: left; transition: color 0.15s;
+    }
+    .json-copy-btn:hover { color: #e2e8f0; }
+
+    /* Row interaction */
+    #tableBody tr { cursor: pointer; }
+    #tableBody tr.selected td { background: rgba(51,133,255,0.06); }
+
     /* Pagination row inside table wrapper */
     .table-footer {
       display: flex;
@@ -576,6 +660,49 @@
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
+<!-- ══ DETAIL PANEL ═══════════════════════════════════════════ -->
+<div class="detail-panel" id="detailPanel">
+  <div class="detail-panel__header">
+    <span class="detail-panel__title">Log Detail</span>
+    <button class="btn-icon" id="detailPanelClose" title="Close" style="width:28px;height:28px;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+  <div class="detail-panel__body">
+    <div id="dpMeta"></div>
+    <hr class="detail-panel__divider" />
+
+    <!-- Error Message -->
+    <div class="dp-section open" id="dpErrorSection">
+      <div class="dp-section__hdr" onclick="toggleDpSection('dpErrorSection')">
+        <span class="dp-section__title">Error Message</span>
+        <svg class="dp-section__chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="dp-section__body"></div>
+    </div>
+
+    <!-- Request -->
+    <div class="dp-section" id="dpRequestSection">
+      <div class="dp-section__hdr" onclick="toggleDpSection('dpRequestSection')">
+        <span class="dp-section__title">Request</span>
+        <svg class="dp-section__chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="dp-section__body"></div>
+    </div>
+
+    <!-- Response -->
+    <div class="dp-section" id="dpResponseSection">
+      <div class="dp-section__hdr" onclick="toggleDpSection('dpResponseSection')">
+        <span class="dp-section__title">Response</span>
+        <svg class="dp-section__chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="dp-section__body"></div>
+    </div>
+  </div>
+</div>
+
 <!-- ══ SCRIPTS ═════════════════════════════════════════════════ -->
 <script>
 (function () {
@@ -721,20 +848,57 @@
   }
 
   /* ── Log factories ──────────────────────────── */
+  const MOCK_ERROR_MSGS = {
+    400: 'Bad request. One or more required parameters are missing or invalid.',
+    401: 'Invalid API key. Please check your credentials and try again.',
+    403: 'Access denied. This API key does not have permission for this resource.',
+    404: 'Not found. The requested resource could not be located.',
+    422: 'Unprocessable entity. The request body failed validation.',
+    429: 'Too many requests. Rate limit exceeded. Please retry after a few seconds.',
+    500: 'Internal server error. An unexpected error occurred on our end.',
+    502: 'Bad gateway. The upstream server returned an invalid response.',
+    503: 'Service unavailable. The server is temporarily unable to handle requests.',
+    504: 'Gateway timeout. The upstream server did not respond in time.',
+  };
+  function mockRequestBody(endpoint) {
+    const file = 'https://example.com/photo_' + Math.random().toString(36).slice(2,7) + '.jpg';
+    return { src_file_url: file, dst_actions: [endpoint.split('/').pop()] };
+  }
+  function mockResponseBody(statusCode, taskId) {
+    if (statusCode >= 200 && statusCode < 300)
+      return { status: statusCode, data: { task_id: taskId } };
+    return { status: statusCode, error: MOCK_ERROR_MSGS[statusCode] || 'An error occurred.' };
+  }
+
   function apiLog(type, ts) {
     const codes = { success: [200,200,200,201,204], 'client-error': [400,401,403,404,422,429], 'server-error': [500,502,503,504] };
-    return { kind:'api', requestId:newId(), timestamp: ts||new Date(),
-      statusCode: rand(codes[type]||codes.success), method: rand(METHODS),
-      endpoint: rand(API_EPS), latency: rInt(8,2400), apiKey: rand(API_KEYS),
+    const id  = newId();
+    const ep  = rand(API_EPS);
+    const sc  = rand(codes[type]||codes.success);
+    const err = sc >= 400 ? (MOCK_ERROR_MSGS[sc] || 'An error occurred.') : null;
+    return { kind:'api', requestId:id, timestamp: ts||new Date(),
+      statusCode: sc, method: rand(METHODS),
+      endpoint: ep, latency: rInt(8,2400), apiKey: rand(API_KEYS),
+      errorMessage: err,
+      requestBody:  mockRequestBody(ep),
+      responseBody: mockResponseBody(sc, id),
       get feature() { return EP_FEATURE[this.endpoint] || rand(FEATURES); } };
   }
   function webhookLog(type, ts) {
     const delivMap = { 'webhook-delivered':'delivered', 'webhook-failed':'failed', 'webhook-retrying':'retrying' };
     const delivery = delivMap[type] || rand(['delivered','failed','retrying']);
     const code = delivery==='delivered' ? 200 : (delivery==='failed' ? rand([500,503]) : rand([429,503]));
-    return { kind:'webhook', requestId:newId(), timestamp: ts||new Date(),
-      statusCode: code, method:'POST', endpoint: rand(WH_EPS), latency: rInt(20,800),
-      webhookName: rand(WEBHOOKS), eventType: rand(EVENT_TYPES), deliveryStatus: delivery };
+    const id  = newId();
+    const ep  = rand(WH_EPS);
+    const err = delivery !== 'delivered' ? (MOCK_ERROR_MSGS[code] || 'Delivery failed.') : null;
+    const payload = { event: rand(EVENT_TYPES), task_id: id, timestamp: new Date().toISOString() };
+    const respBody = delivery === 'delivered'
+      ? { status: 200, message: 'OK' }
+      : { status: code, error: err };
+    return { kind:'webhook', requestId:id, timestamp: ts||new Date(),
+      statusCode: code, method:'POST', endpoint: ep, latency: rInt(20,800),
+      webhookName: rand(WEBHOOKS), eventType: rand(EVENT_TYPES), deliveryStatus: delivery,
+      errorMessage: err, requestBody: payload, responseBody: respBody };
   }
 
   /* ── Seed data ──────────────────────────────── */
@@ -853,6 +1017,7 @@
         tr.innerHTML = isWH
           ? `${ts}${rid}${ep}${st}${lat}<td><span class="chip">${l.eventType||'—'}</span></td><td><span class="badge badge-${l.deliveryStatus}">${l.deliveryStatus}</span></td>`
           : `${ts}${rid}<td class="mono">${truncKey(l.apiKey)}</td>${ep}${st}${mth}${lat}`;
+        tr.addEventListener('click', () => openDetailPanel(l, tr));
         tbody.appendChild(tr);
       });
     }
@@ -1020,6 +1185,100 @@
       showToast('Log generated: ' + log.requestId);
     });
   });
+
+  /* ── Detail Panel ───────────────────────────── */
+  function syntaxHighlight(obj) {
+    const str = JSON.stringify(obj, null, 2);
+    return str.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)/g, match => {
+      if (/^"/.test(match)) {
+        return /:$/.test(match)
+          ? `<span class="json-key">${match}</span>`
+          : `<span class="json-str">${match}</span>`;
+      }
+      if (/true|false/.test(match)) return `<span class="json-bool">${match}</span>`;
+      if (/null/.test(match))       return `<span class="json-null">${match}</span>`;
+      return `<span class="json-num">${match}</span>`;
+    });
+  }
+
+  function buildSection(sectionId, json, isJson) {
+    const sec = document.getElementById(sectionId);
+    const body = sec.querySelector('.dp-section__body');
+    body.innerHTML = '';
+    if (isJson) {
+      const pre = document.createElement('div');
+      pre.className = 'json-block';
+      pre.innerHTML = syntaxHighlight(json);
+      const copyBtn = document.createElement('button');
+      copyBtn.className = 'json-copy-btn';
+      copyBtn.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy`;
+      copyBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        navigator.clipboard.writeText(JSON.stringify(json, null, 2)).then(() => {
+          copyBtn.textContent = 'Copied!';
+          setTimeout(() => {
+            copyBtn.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy`;
+          }, 1500);
+        });
+      });
+      body.appendChild(pre);
+      body.appendChild(copyBtn);
+    } else {
+      const p = document.createElement('div');
+      p.className = 'json-plain';
+      p.textContent = json || 'no error message';
+      body.appendChild(p);
+    }
+  }
+
+  function openDetailPanel(log, tr) {
+    // Highlight selected row
+    document.querySelectorAll('#tableBody tr').forEach(r => r.classList.remove('selected'));
+    tr.classList.add('selected');
+
+    const isWH = log.kind === 'webhook';
+    const fields = isWH ? [
+      ['Request ID',    log.requestId],
+      ['Timestamp',     fmtTs(log.timestamp)],
+      ['URL',           log.endpoint],
+      ['Response Code', String(log.statusCode)],
+      ['Latency',       log.latency + ' ms'],
+      ['Event Type',    log.eventType || '—'],
+      ['Delivery',      log.deliveryStatus],
+    ] : [
+      ['Request ID',    log.requestId],
+      ['Timestamp',     fmtTs(log.timestamp)],
+      ['API Key',       truncKey(log.apiKey)],
+      ['Endpoint',      log.endpoint],
+      ['Status Code',   String(log.statusCode)],
+      ['Method',        log.method],
+      ['Latency',       log.latency + ' ms'],
+    ];
+
+    const meta = document.getElementById('dpMeta');
+    meta.innerHTML = fields.map(([label, val]) => `
+      <div class="detail-panel__row">
+        <div class="detail-panel__label">${label}</div>
+        <div class="detail-panel__value mono">${val}</div>
+      </div>`).join('');
+
+    buildSection('dpErrorSection', log.errorMessage, false);
+    buildSection('dpRequestSection', log.requestBody, true);
+    buildSection('dpResponseSection', log.responseBody, true);
+
+    document.getElementById('detailPanel').classList.add('open');
+  }
+
+  function closeDetailPanel() {
+    document.getElementById('detailPanel').classList.remove('open');
+    document.querySelectorAll('#tableBody tr').forEach(r => r.classList.remove('selected'));
+  }
+
+  window.toggleDpSection = function(id) {
+    document.getElementById(id).classList.toggle('open');
+  };
+
+  document.getElementById('detailPanelClose').addEventListener('click', closeDetailPanel);
 
   /* ── Toast ──────────────────────────────────── */
   function showToast(msg) {

@@ -8,6 +8,30 @@
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../src/css/tokens.css" />
   <link rel="stylesheet" href="../src/css/components.css" />
+  <style>
+    .tooltip-anchor { position: relative; }
+    .tooltip-box {
+      display: none;
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      width: 260px;
+      background: var(--color-surface-overlay, #1e2128);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 400;
+      line-height: 1.5;
+      padding: 8px 10px;
+      border-radius: 6px;
+      white-space: normal;
+      z-index: 999;
+      pointer-events: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+    }
+    .tooltip-anchor:hover .tooltip-box,
+    .tooltip-anchor:focus .tooltip-box { display: block; }
+  </style>
 </head>
 <body>
 
@@ -121,7 +145,10 @@
           <table class="table">
             <thead><tr>
               <th>API Key</th><th>Description</th><th>Rate Limit</th>
-              <th>Status</th><th>Created on</th><th>Last used</th><th>Expired on</th><th>Operations</th>
+              <th>Status</th><th>Created on</th><th>Last used <span class="tooltip-anchor" style="display:inline-flex;align-items:center;vertical-align:middle;margin-left:3px;cursor:default;" tabindex="0">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--color-text-tertiary);flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                <span class="tooltip-box" role="tooltip">The last time this key was used to run an AI task. Checking task status or uploading files does not update this timestamp.</span>
+              </span></th><th>Expired on</th><th>Operations</th>
             </tr></thead>
             <tbody>
               <tr>
